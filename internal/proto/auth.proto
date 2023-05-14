@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package gophkeeper;
+
+option go_package = "ydx-goadv-gophkeeper/internal/proto/grpc1";
+
+import "google/protobuf/timestamp.proto";
+
+message AuthData {
+  string username = 1;
+  string password = 2;
+}
+
+message TokenData {
+  string token = 1;
+  google.protobuf.Timestamp expireAt = 2;
+}
+
+service Auth {
+  rpc Register(AuthData) returns (TokenData);
+  rpc Login(AuthData) returns (TokenData);
+}
+
+//protoc --go_out=. --go_opt=paths=ydx-goadv-gophkeeper/internal/grpc/proto  --go-grpc_out=. --go-grpc_opt=paths=ydx-goadv-gophkeeper/internal/grpc/proto proto/auth.proto
+// --go_opt=grpc1/auth.proto=ydx-goadv-gophkeeper/internal/grpc1 \
+//    protoc --go_out=grpc1 --go_opt=grpc1/auth.proto=ydx-goadv-gophkeeper/internal/grpc1 --go_opt=paths=grpc1 grpc1/*.proto
+// protoc -I C:/Users/mixa1/AppData/Local/JetBrains/GoLand2022.2/protoeditor -I . --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative *.proto
