@@ -15,7 +15,7 @@ import (
 )
 
 type ResourceService interface {
-	Save(ctx context.Context, resType enum.ResourceType, alias string, data []byte, meta []byte) (int32, error)
+	Save(ctx context.Context, resType enum.ResourceType, data []byte, meta []byte) (int32, error)
 	Delete(ctx context.Context, resId int32) error
 	GetDescriptions(ctx context.Context, resType enum.ResourceType) ([]*model.ResourceDescription, error)
 	Get(ctx context.Context, resId int32) (*model.ResourceInfo, error)
@@ -40,15 +40,13 @@ func NewResourceService(
 func (s *resourceService) Save(
 	ctx context.Context,
 	resType enum.ResourceType,
-	alias string,
 	data []byte,
 	meta []byte,
 ) (int32, error) {
 	resId, err := s.resourceClient.Save(ctx, &pb.Resource{
-		Type:  pb.TYPE(resType),
-		Alias: alias,
-		Data:  data,
-		Meta:  meta,
+		Type: pb.TYPE(resType),
+		Data: data,
+		Meta: meta,
 	})
 	if err != nil {
 		return 0, err
@@ -76,10 +74,9 @@ func (s *resourceService) GetDescriptions(ctx context.Context, resType enum.Reso
 			return nil, err
 		}
 		results = append(results, &model.ResourceDescription{
-			Id:    descr.Id,
-			Alias: descr.Alias,
-			Meta:  descr.Meta,
-			Type:  enum.ResourceType(descr.Type),
+			Id:   descr.Id,
+			Meta: descr.Meta,
+			Type: enum.ResourceType(descr.Type),
 		})
 	}
 	return results, nil

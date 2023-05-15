@@ -221,7 +221,7 @@ func (cp *commandParser) saveTextResource(resource any, meta string, resType enu
 	if err != nil {
 		return "", err
 	}
-	id, err := cp.resourceService.Save(context.Background(), resType, "", resourceJson, []byte(meta))
+	id, err := cp.resourceService.Save(context.Background(), resType, resourceJson, []byte(meta))
 	if err != nil {
 		return "", err
 	}

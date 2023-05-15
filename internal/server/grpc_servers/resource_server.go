@@ -65,10 +65,9 @@ func (s *ResourceServer) GetDescriptions(query *pb.Query, stream pb.Resources_Ge
 
 	for _, resDescription := range resourceDescriptions {
 		err := stream.Send(&pb.ResourceDescription{
-			Id:    resDescription.Id,
-			Type:  pb.TYPE(resDescription.Type),
-			Alias: resDescription.Alias,
-			Meta:  resDescription.Meta,
+			Id:   resDescription.Id,
+			Type: pb.TYPE(resDescription.Type),
+			Meta: resDescription.Meta,
 		})
 		if err != nil {
 			return err

@@ -9,8 +9,7 @@ type Resource struct {
 }
 
 type ResourceDescription struct {
-	Id    int32             `db:"id"`
-	Alias string            `db:"alias"`
-	Meta  []byte            `db:"meta"`
-	Type  enum.ResourceType `db:"type"`
+	Id   int32             `db:"id"`
+	Meta []byte            `db:"meta"`
+	Type enum.ResourceType `db:"type"`
 }
