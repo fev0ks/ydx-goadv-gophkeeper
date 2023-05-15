@@ -24,8 +24,8 @@ const (
 	Resources_Delete_FullMethodName          = "/gophkeeper.Resources/Delete"
 	Resources_GetDescriptions_FullMethodName = "/gophkeeper.Resources/GetDescriptions"
 	Resources_Get_FullMethodName             = "/gophkeeper.Resources/Get"
-	Resources_SaveFile_FullMethodName        = "/gophkeeper.Resources/SaveFile"
-	Resources_GetFile_FullMethodName         = "/gophkeeper.Resources/GetFile"
+	Resources_SaveFile_FullMethodName        = "/gophkeeper.Resources/SaveFileDescription"
+	Resources_GetFile_FullMethodName         = "/gophkeeper.Resources/GetFileDescription"
 )
 
 // ResourcesClient is the client API for Resources service.
@@ -203,10 +203,10 @@ func (UnimplementedResourcesServer) Get(context.Context, *ResourceId) (*Resource
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
 func (UnimplementedResourcesServer) SaveFile(Resources_SaveFileServer) error {
-	return status.Errorf(codes.Unimplemented, "method SaveFile not implemented")
+	return status.Errorf(codes.Unimplemented, "method SaveFileDescription not implemented")
 }
 func (UnimplementedResourcesServer) GetFile(*ResourceId, Resources_GetFileServer) error {
-	return status.Errorf(codes.Unimplemented, "method GetFile not implemented")
+	return status.Errorf(codes.Unimplemented, "method GetFileDescription not implemented")
 }
 func (UnimplementedResourcesServer) mustEmbedUnimplementedResourcesServer() {}
 
@@ -370,12 +370,12 @@ var Resources_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "SaveFile",
+			StreamName:    "SaveFileDescription",
 			Handler:       _Resources_SaveFile_Handler,
 			ClientStreams: true,
 		},
 		{
-			StreamName:    "GetFile",
+			StreamName:    "GetFileDescription",
 			Handler:       _Resources_GetFile_Handler,
 			ServerStreams: true,
 		},

@@ -9,15 +9,15 @@ import (
 	"go.uber.org/zap"
 
 	"ydx-goadv-gophkeeper/internal/logger"
-	"ydx-goadv-gophkeeper/internal/model"
 	"ydx-goadv-gophkeeper/internal/model/enum"
 	"ydx-goadv-gophkeeper/internal/model/errs"
+	"ydx-goadv-gophkeeper/internal/model/resources"
 )
 
 type ResourceRepository interface {
-	Save(ctx context.Context, resource *model.Resource) error
-	Get(ctx context.Context, resId int32, userId int32) (*model.Resource, error)
-	GetResDescriptionsByType(ctx context.Context, userId int32, resType enum.ResourceType) ([]*model.ResourceDescription, error)
+	Save(ctx context.Context, resource *resources.Resource) error
+	Get(ctx context.Context, resId int32, userId int32) (*resources.Resource, error)
+	GetResDescriptionsByType(ctx context.Context, userId int32, resType enum.ResourceType) ([]*resources.ResourceDescription, error)
 	Delete(ctx context.Context, resId int32, userId int32) error
 }
 
@@ -30,7 +30,7 @@ func NewResourceRepository(db DBProvider) ResourceRepository {
 	return &resourceRepository{log: logger.NewLogger("res-repo"), db: db}
 }
 
-func (s *resourceRepository) Save(ctx context.Context, resource *model.Resource) error {
+func (s *resourceRepository) Save(ctx context.Context, resource *resources.Resource) error {
 	conn, err := s.db.GetConnection(ctx)
 	if err != nil {
 		return err
@@ -54,8 +54,8 @@ func (s *resourceRepository) Save(ctx context.Context, resource *model.Resource)
 	return err
 }
 
-func (r *resourceRepository) Get(ctx context.Context, resId int32, userId int32) (*model.Resource, error) {
-	var result model.Resource
+func (r *resourceRepository) Get(ctx context.Context, resId int32, userId int32) (*resources.Resource, error) {
+	var result resources.Resource
 	conn, err := r.db.GetConnection(ctx)
 	if err != nil {
 		return nil, err
@@ -74,8 +74,8 @@ func (r *resourceRepository) Get(ctx context.Context, resId int32, userId int32)
 	return &result, err
 }
 
-func (s *resourceRepository) GetResDescriptionsByType(ctx context.Context, userId int32, resType enum.ResourceType) ([]*model.ResourceDescription, error) {
-	var results []*model.ResourceDescription
+func (s *resourceRepository) GetResDescriptionsByType(ctx context.Context, userId int32, resType enum.ResourceType) ([]*resources.ResourceDescription, error) {
+	var results []*resources.ResourceDescription
 	conn, err := s.db.GetConnection(ctx)
 	if err != nil {
 		return results, err
@@ -99,7 +99,7 @@ func (s *resourceRepository) GetResDescriptionsByType(ctx context.Context, userI
 	}
 	defer rows.Close()
 	for rows.Next() {
-		resDescr := &model.ResourceDescription{}
+		resDescr := &resources.ResourceDescription{}
 		err := rows.Scan(&resDescr.Id, &resDescr.Meta, &resDescr.Type)
 		if err != nil {
 			s.log.Errorf("failed to read '%d' resources of userId '%d': %v", resType, userId, err)

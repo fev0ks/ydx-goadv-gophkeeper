@@ -1,4 +1,4 @@
-package model
+package resources
 
 type ResourceClIFormatter interface {
 	Format(description string) string

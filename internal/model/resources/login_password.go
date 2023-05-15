@@ -1,4 +1,4 @@
-package model
+package resources
 
 import "fmt"
 
@@ -12,5 +12,5 @@ func NewLoginPassword(login string, password string) *LoginPassword {
 }
 
 func (p *LoginPassword) Format(description string) string {
-	return fmt.Sprintf("\nlogin:%s\npassword:%s\ndescription:%s", p.Login, p.Password, description)
+	return fmt.Sprintf("login: %s\npassword: %s\ndescription: %s", p.Login, p.Password, description)
 }

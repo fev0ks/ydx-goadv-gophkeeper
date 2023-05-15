@@ -13,9 +13,9 @@ import (
 	"golang.org/x/term"
 
 	"ydx-goadv-gophkeeper/internal/client/services"
-	"ydx-goadv-gophkeeper/internal/model"
 	"ydx-goadv-gophkeeper/internal/model/consts"
 	"ydx-goadv-gophkeeper/internal/model/enum"
+	"ydx-goadv-gophkeeper/internal/model/resources"
 )
 
 const (
@@ -229,31 +229,31 @@ func (cp *commandParser) saveTextResource(resource any, meta string, resType enu
 }
 
 func (cp *commandParser) saveFile() (string, error) {
-	path := cp.readString("input file path")
-	description := cp.readString("input description")
-	id, err := cp.resourceService.SaveFile(context.Background(), description, path)
+	filePath := cp.readString("input file path")
+	meta := cp.readString("input description")
+	id, err := cp.resourceService.SaveFile(context.Background(), filePath, []byte(meta))
 	if err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("%d", id), nil
 }
 
-func (cp *commandParser) readLoginPassword() (*model.LoginPassword, string) {
+func (cp *commandParser) readLoginPassword() (*resources.LoginPassword, string) {
 	login := cp.readString("input login")
 	password := cp.readPassword()
 	description := cp.readString("input description")
 
-	return model.NewLoginPassword(login, password), description
+	return resources.NewLoginPassword(login, password), description
 }
 
-func (cp *commandParser) readBankCard() (*model.BankCard, string) {
+func (cp *commandParser) readBankCard() (*resources.BankCard, string) {
 	number := cp.readString("input number")
 	expireAt := cp.readString("input expireAt in format: MM/YY")
 	name := cp.readString("input name")
 	surname := cp.readString("input surname")
 	description := cp.readString("input description")
 
-	return model.NewBankCard(number, expireAt, name, surname), description
+	return resources.NewBankCard(number, expireAt, name, surname), description
 }
 
 func (cp *commandParser) readString(label string) string {

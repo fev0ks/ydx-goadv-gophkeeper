@@ -507,14 +507,14 @@ var file_resource_proto_depIdxs = []int32{
 	4, // 4: gophkeeper.Resources.Delete:input_type -> gophkeeper.ResourceId
 	5, // 5: gophkeeper.Resources.GetDescriptions:input_type -> gophkeeper.Query
 	4, // 6: gophkeeper.Resources.Get:input_type -> gophkeeper.ResourceId
-	6, // 7: gophkeeper.Resources.SaveFile:input_type -> gophkeeper.FileChunk
-	4, // 8: gophkeeper.Resources.GetFile:input_type -> gophkeeper.ResourceId
+	6, // 7: gophkeeper.Resources.SaveFileDescription:input_type -> gophkeeper.FileChunk
+	4, // 8: gophkeeper.Resources.GetFileDescription:input_type -> gophkeeper.ResourceId
 	4, // 9: gophkeeper.Resources.Save:output_type -> gophkeeper.ResourceId
 	7, // 10: gophkeeper.Resources.Delete:output_type -> google.protobuf.Empty
 	3, // 11: gophkeeper.Resources.GetDescriptions:output_type -> gophkeeper.ResourceDescription
 	2, // 12: gophkeeper.Resources.Get:output_type -> gophkeeper.Resource
-	4, // 13: gophkeeper.Resources.SaveFile:output_type -> gophkeeper.ResourceId
-	6, // 14: gophkeeper.Resources.GetFile:output_type -> gophkeeper.FileChunk
+	4, // 13: gophkeeper.Resources.SaveFileDescription:output_type -> gophkeeper.ResourceId
+	6, // 14: gophkeeper.Resources.GetFileDescription:output_type -> gophkeeper.FileChunk
 	9, // [9:15] is the sub-list for method output_type
 	3, // [3:9] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name

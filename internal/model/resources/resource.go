@@ -1,4 +1,4 @@
-package model
+package resources
 
 import "ydx-goadv-gophkeeper/internal/model/enum"
 
