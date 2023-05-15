@@ -2,6 +2,7 @@ package services
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -34,27 +35,31 @@ func (fm *fileService) ReadFile(path string, errCh chan error) (chan []byte, os.
 	if err != nil {
 		return buf, nil, err
 	}
-	defer file.Close()
+
 	stat, err := file.Stat()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	reader := bufio.NewReader(file)
-	buffer := make([]byte, bufferSize)
-	n := 0
 	go func() {
+		defer file.Close()
+		reader := bufio.NewReader(file)
+		buffer := make([]byte, bufferSize)
+		n := 0
 		for {
 			n, err = reader.Read(buffer)
 			if err == io.EOF || n == 0 {
 				close(buf)
+				return
 			}
 			if err != nil {
 				close(buf)
+				return
 			}
 
 			select {
 			case buf <- buffer[:n]:
+				fmt.Println("chunk")
 			case _ = <-errCh:
 				close(buf)
 				return
@@ -75,10 +80,10 @@ func (fm *fileService) SaveFile(path string, chunks chan []byte) (chan error, er
 	if err != nil {
 		return nil, err
 	}
-	writer := bufio.NewWriter(file)
-	defer file.Close()
-	defer writer.Flush()
 	go func() {
+		writer := bufio.NewWriter(file)
+		defer file.Close()
+		defer writer.Flush()
 		for {
 			if bytes, ok := <-chunks; ok {
 				_, err = writer.Write(bytes)

@@ -164,8 +164,16 @@ func (s *resourceService) GetFile(ctx context.Context, resId int32) (string, err
 	if err != nil {
 		return "", err
 	}
-
-	path := fmt.Sprintf("./%d", resId)
+	chunk, err := stream.Recv()
+	if err != nil {
+		return "", err
+	}
+	var fileDescription resources.File
+	err = json.Unmarshal(chunk.Data, &fileDescription)
+	if err != nil {
+		return "", err
+	}
+	path := fmt.Sprintf("./%s", fileDescription.Name)
 	chunks := make(chan []byte)
 	errCh, err := s.fileService.SaveFile(path, chunks)
 	if err != nil {

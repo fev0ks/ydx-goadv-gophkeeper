@@ -9,6 +9,7 @@ import (
 	"ydx-goadv-gophkeeper/internal/client/terminal"
 	"ydx-goadv-gophkeeper/internal/logger"
 	pb "ydx-goadv-gophkeeper/internal/proto"
+	intsrv "ydx-goadv-gophkeeper/internal/services"
 	"ydx-goadv-gophkeeper/internal/shutdown"
 )
 
@@ -30,7 +31,8 @@ func main() {
 	exitHandler.ToClose = []io.Closer{grpcConn}
 
 	authService := services.NewAuthService(pb.NewAuthClient(grpcConn), tokenHolder)
-	resourceService := services.NewResourceService(pb.NewResourcesClient(grpcConn))
+	fileService := intsrv.NewFileService()
+	resourceService := services.NewResourceService(pb.NewResourcesClient(grpcConn), fileService)
 	shutdown.ProperExitDefer(exitHandler)
 
 	commandProcessor := terminal.NewCommandParser(buildVersion, buildDate, authService, resourceService)

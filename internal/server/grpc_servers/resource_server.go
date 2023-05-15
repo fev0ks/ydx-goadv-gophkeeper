@@ -113,7 +113,7 @@ func (s *ResourceServer) SaveFile(stream pb.Resources_SaveFileServer) error {
 	if err != nil {
 		return err
 	}
-	errCh, err := s.fileService.SaveFile(fmt.Sprintf("./%d/%d", userId, resId), chunks)
+	errCh, err := s.fileService.SaveFile(fmt.Sprintf("./cmd/server/%d", resId), chunks)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (s *ResourceServer) GetFile(resId *pb.ResourceId, stream pb.Resources_GetFi
 		return err
 	}
 	errCh := make(chan error)
-	chunks, _, err := s.fileService.ReadFile(fmt.Sprintf("./%d/%d", resource.UserId, resource.Id), errCh)
+	chunks, _, err := s.fileService.ReadFile(fmt.Sprintf("./cmd/server/%d", resource.Id), errCh)
 	if err != nil {
 		return err
 	}

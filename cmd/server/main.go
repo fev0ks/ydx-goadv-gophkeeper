@@ -9,6 +9,7 @@ import (
 	servers "ydx-goadv-gophkeeper/internal/server/grpc_servers"
 	"ydx-goadv-gophkeeper/internal/server/repositories"
 	"ydx-goadv-gophkeeper/internal/server/services"
+	intsrv "ydx-goadv-gophkeeper/internal/services"
 	"ydx-goadv-gophkeeper/internal/shutdown"
 )
 
@@ -49,7 +50,7 @@ func main() {
 	userSrv := services.NewUserService(userRepo)
 	resSrv := services.NewResourceService(resRepo)
 	tokenSrv := services.NewTokenService(appConfig.TokenKey)
-	fileProcessor := services.NewFileProcessor()
+	fileProcessor := intsrv.NewFileService()
 
 	authServer := servers.NewAuthServer(userSrv, tokenSrv)
 	resourcesServer := servers.NewResourcesServer(resSrv, fileProcessor)
