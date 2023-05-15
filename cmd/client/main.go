@@ -2,8 +2,10 @@ package main
 
 import (
 	"io"
+	"os"
 
 	clients "ydx-goadv-gophkeeper/internal/client"
+	"ydx-goadv-gophkeeper/internal/client/configs"
 	"ydx-goadv-gophkeeper/internal/client/model"
 	"ydx-goadv-gophkeeper/internal/client/services"
 	"ydx-goadv-gophkeeper/internal/client/terminal"
@@ -16,15 +18,28 @@ import (
 var (
 	buildVersion = "N/A"
 	buildDate    = "N/A"
+
+	configPathEnvVar  = "CONFIG"
+	defaultConfigPath = "cmd/client/config.json"
 )
 
 func main() {
 	log := logger.NewLogger("main")
+	log.Infof("Server args: %s", os.Args[1:])
+	configPath := os.Getenv(configPathEnvVar)
+	if configPath == "" {
+		configPath = defaultConfigPath
+	}
+	appConfig, err := configs.InitAppConfig(configPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	exitHandler := shutdown.NewExitHandler()
 
 	tokenHolder := &model.TokenHolder{}
 
-	grpcConn, err := clients.CreateGrpcConnection(":3200", tokenHolder)
+	grpcConn, err := clients.CreateGrpcConnection(appConfig.ServerPort, tokenHolder)
 	if err != nil {
 		log.Fatalf("failed to create grpc connection: %v", err)
 	}
@@ -32,7 +47,8 @@ func main() {
 
 	authService := services.NewAuthService(pb.NewAuthClient(grpcConn), tokenHolder)
 	fileService := intsrv.NewFileService()
-	resourceService := services.NewResourceService(pb.NewResourcesClient(grpcConn), fileService)
+	cryptoService := services.NewCryptService(appConfig.PrivateKey)
+	resourceService := services.NewResourceService(pb.NewResourcesClient(grpcConn), fileService, cryptoService)
 	shutdown.ProperExitDefer(exitHandler)
 
 	commandProcessor := terminal.NewCommandParser(buildVersion, buildDate, authService, resourceService)

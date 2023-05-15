@@ -11,7 +11,10 @@ import (
 	"syscall"
 	"time"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
+
+	"ydx-goadv-gophkeeper/internal/logger"
 )
 
 var (
@@ -19,6 +22,7 @@ var (
 )
 
 type ExitHandler struct {
+	log               *zap.SugaredLogger
 	httpServer        *http.Server
 	grpcServer        *grpc.Server
 	ToCancel          []context.CancelFunc
@@ -31,6 +35,7 @@ type ExitHandler struct {
 
 func NewExitHandler() *ExitHandler {
 	return &ExitHandler{
+		log:               logger.NewLogger("exit-hdr"),
 		newFuncAllowed:    true,
 		funcsInProcessing: sync.WaitGroup{},
 	}
@@ -59,19 +64,19 @@ func (eh *ExitHandler) ShutdownGrpcServerBeforeExit(grpcServer *grpc.Server) {
 func (eh *ExitHandler) AddFuncInProcessing(alias string) {
 	mu.Lock()
 	defer mu.Unlock()
-	log.Printf("'%s' func is started and added to exit handler", alias)
+	eh.log.Infof("'%s' func is started and added to exit handler", alias)
 	eh.funcsInProcessing.Add(1)
 }
 
 func (eh *ExitHandler) FuncFinished(alias string) {
 	mu.Lock()
 	defer mu.Unlock()
-	log.Printf("'%s' func is finished and removed from exit handler", alias)
+	eh.log.Infof("'%s' func is finished and removed from exit handler", alias)
 	eh.funcsInProcessing.Add(-1)
 }
 
 func ProperExitDefer(exitHandler *ExitHandler) {
-	log.Println("Graceful exit handler is activated")
+	exitHandler.log.Info("Graceful exit handler is activated")
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals,
 		syscall.SIGINT,
@@ -80,7 +85,7 @@ func ProperExitDefer(exitHandler *ExitHandler) {
 	)
 	go func() {
 		s := <-signals
-		log.Printf("Received a signal '%s'", s)
+		exitHandler.log.Infof("Received a signal '%s'", s)
 		exitHandler.setNewFuncExecutionAllowed(false)
 		exitHandler.shutdown()
 	}()
@@ -116,7 +121,7 @@ func (eh *ExitHandler) waitForShutdownServer() {
 		err := eh.httpServer.Shutdown(context.Background())
 		log.Println("Http Server shutdown complete")
 		if err != nil {
-			log.Printf("failed to shutdown server: %v", err)
+			eh.log.Infof("failed to shutdown server: %v", err)
 		}
 	}
 	if eh.grpcServer != nil {
@@ -131,7 +136,7 @@ func (eh *ExitHandler) endHeldObjects() {
 	for _, execute := range eh.ToExecute {
 		err := execute(context.Background())
 		if err != nil {
-			log.Printf("func error: %v", err)
+			eh.log.Infof("func error: %v", err)
 		}
 	}
 	log.Println("ToCancel active contexts")
@@ -146,7 +151,7 @@ func (eh *ExitHandler) endHeldObjects() {
 	for _, toClose := range eh.ToClose {
 		err := toClose.Close()
 		if err != nil {
-			log.Printf("failed to close an resource: %v", err)
+			eh.log.Infof("failed to close an resource: %v", err)
 		}
 	}
 	log.Println("Success end final work")

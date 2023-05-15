@@ -13,7 +13,7 @@ import (
 	"ydx-goadv-gophkeeper/internal/model/enum"
 	"ydx-goadv-gophkeeper/internal/model/resources"
 	pb "ydx-goadv-gophkeeper/internal/proto"
-	"ydx-goadv-gophkeeper/internal/services"
+	intsrv "ydx-goadv-gophkeeper/internal/services"
 )
 
 type ResourceService interface {
@@ -28,17 +28,20 @@ type ResourceService interface {
 type resourceService struct {
 	log            *zap.SugaredLogger
 	resourceClient pb.ResourcesClient
-	fileService    services.FileService
+	fileService    intsrv.FileService
+	cryptoService  CryptService
 }
 
 func NewResourceService(
 	client pb.ResourcesClient,
-	fileService services.FileService,
+	fileService intsrv.FileService,
+	cryptoService CryptService,
 ) ResourceService {
 	return &resourceService{
 		log:            logger.NewLogger("res-service"),
 		resourceClient: client,
 		fileService:    fileService,
+		cryptoService:  cryptoService,
 	}
 }
 
@@ -48,9 +51,13 @@ func (s *resourceService) Save(
 	data []byte,
 	meta []byte,
 ) (int32, error) {
+	encryptedData, err := s.cryptoService.Encrypt(data)
+	if err != nil {
+		return 0, err
+	}
 	resId, err := s.resourceClient.Save(ctx, &pb.Resource{
 		Type: pb.TYPE(resType),
-		Data: data,
+		Data: encryptedData,
 		Meta: meta,
 	})
 	if err != nil {
@@ -92,6 +99,11 @@ func (s *resourceService) Get(ctx context.Context, resId int32) (*resources.Reso
 	if err != nil {
 		return nil, err
 	}
+	decryptedData, err := s.cryptoService.Decrypt(resource.Data)
+	if err != nil {
+		return nil, err
+	}
+	resource.Data = decryptedData
 	return s.parseResource(resource)
 }
 
