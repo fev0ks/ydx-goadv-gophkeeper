@@ -19,8 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Auth_Register_FullMethodName = "/gophkeeper.Auth/Register"
-	Auth_Login_FullMethodName    = "/gophkeeper.Auth/Login"
+	Auth_Register_FullMethodName = "/gophkeeper.Auth/CreateUser"
+	Auth_Login_FullMethodName    = "/gophkeeper.Auth/GetUser"
 )
 
 // AuthClient is the client API for Auth service.
@@ -71,10 +71,10 @@ type UnimplementedAuthServer struct {
 }
 
 func (UnimplementedAuthServer) Register(context.Context, *AuthData) (*TokenData, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
 }
 func (UnimplementedAuthServer) Login(context.Context, *AuthData) (*TokenData, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
 }
 func (UnimplementedAuthServer) mustEmbedUnimplementedAuthServer() {}
 
@@ -133,11 +133,11 @@ var Auth_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*AuthServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Register",
+			MethodName: "CreateUser",
 			Handler:    _Auth_Register_Handler,
 		},
 		{
-			MethodName: "Login",
+			MethodName: "GetUser",
 			Handler:    _Auth_Login_Handler,
 		},
 	},

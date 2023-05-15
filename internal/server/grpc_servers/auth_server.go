@@ -3,6 +3,7 @@ package grpc_servers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -38,31 +39,40 @@ func (s *authServer) Register(ctx context.Context, authData *pb.AuthData) (*pb.T
 		return nil, err
 	}
 
-	User := model.User{Username: authData.Username, Password: authData.Password}
-	id, err := s.userService.Register(ctx, User)
-
-	if err == nil {
-		return s.genToken(id)
-	}
+	user := &model.User{Username: authData.Username, Password: []byte(authData.Password)}
+	id, err := s.userService.CreateUser(ctx, user)
 	if errors.Is(err, errs.ErrUserAlreadyExist) {
 		return nil, status.Error(codes.AlreadyExists, err.Error())
 	}
-	return nil, status.Error(codes.Internal, "internal error")
+	if err != nil {
+		s.log.Errorf("failed to create user: %v", err)
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create user: %v", err))
+	}
+	return s.genToken(id)
 }
 
 func (s *authServer) Login(ctx context.Context, authData *pb.AuthData) (*pb.TokenData, error) {
 	if err := validateAuthData(authData); err != nil {
 		return nil, err
 	}
-	User := model.User{Username: authData.Username, Password: authData.Password}
-	id, err := s.userService.Login(ctx, User)
-	if err == nil {
-		return s.genToken(id)
-	}
+	user, err := s.userService.GetUser(ctx, authData.Username)
 	if errors.Is(err, errs.ErrUserNotFound) {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
-	return nil, status.Error(codes.Internal, "internal error")
+	if err != nil {
+		s.log.Errorf("failed to get user: %v", err)
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get user: %v", err))
+	}
+	ok, err := s.userService.ValidatePassword(ctx, user, authData.Password)
+	if err != nil {
+		s.log.Errorf("failed to check user password: %v", err)
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to check user password: %v", err))
+	}
+	if !ok {
+		s.log.Warn("password is incorrect")
+		return nil, status.Error(codes.InvalidArgument, "password is incorrect")
+	}
+	return s.genToken(user.Id)
 }
 
 func validateAuthData(authData *pb.AuthData) error {

@@ -171,6 +171,12 @@ func (cp *commandParser) handleList(args []string) (string, error) {
 		return "", err
 	}
 	var writer strings.Builder
+	if len(resDescriptions) == 0 {
+		_, err := writer.WriteString("empty")
+		if err != nil {
+			return "", err
+		}
+	}
 	for _, resDescription := range resDescriptions {
 		_, err := writer.WriteString(fmt.Sprintf("id: %d - type: '%s', descr: '%s'\n", resDescription.Id, consts.TypeToArg[resDescription.Type], string(resDescription.Meta)))
 		if err != nil {

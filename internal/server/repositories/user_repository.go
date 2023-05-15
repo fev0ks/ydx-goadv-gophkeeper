@@ -16,8 +16,8 @@ import (
 )
 
 type UserRepository interface {
-	Register(context.Context, model.User) (int32, error)
-	Login(context.Context, model.User) (int32, error)
+	CreateUser(context.Context, *model.User) (int32, error)
+	GetUser(ctx context.Context, username string) (*model.User, error)
 }
 
 type userRepository struct {
@@ -29,7 +29,7 @@ func NewUserRepository(db DBProvider) UserRepository {
 	return &userRepository{log: logger.NewLogger("auth-repo"), db: db}
 }
 
-func (repo *userRepository) Register(ctx context.Context, user model.User) (int32, error) {
+func (repo *userRepository) CreateUser(ctx context.Context, user *model.User) (int32, error) {
 	conn, err := repo.db.GetConnection(ctx)
 	if err != nil {
 		return 0, err
@@ -49,23 +49,22 @@ func (repo *userRepository) Register(ctx context.Context, user model.User) (int3
 	return userId, nil
 }
 
-func (repo *userRepository) Login(ctx context.Context, user model.User) (int32, error) {
+func (repo *userRepository) GetUser(ctx context.Context, username string) (*model.User, error) {
 	conn, err := repo.db.GetConnection(ctx)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	defer conn.Release()
-
-	queryRow := conn.QueryRow(ctx, "select id from users where username = $1 and password = $2", user.Username, user.Password)
-	var userId int32
-	err = queryRow.Scan(&userId)
+	user := &model.User{}
+	queryRow := conn.QueryRow(ctx, "select id, password from users where username = $1", username)
+	err = queryRow.Scan(&user.Id, &user.Password)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return 0, errs.ErrUserNotFound
+		return nil, errs.ErrUserNotFound
 	}
 	if err != nil {
 		repo.log.Errorf("failed to get user '%s': %v", user.Username, err)
-		return 0, fmt.Errorf("failed to get user '%s': %v", user.Username, err)
+		return nil, fmt.Errorf("failed to get user '%s': %v", user.Username, err)
 	}
 
-	return userId, nil
+	return user, nil
 }

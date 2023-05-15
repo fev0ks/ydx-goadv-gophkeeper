@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	registerMethod = "/gophkeeper.Auth/Register"
-	loginMethod    = "/gophkeeper.Auth/Login"
+	registerMethod = "/gophkeeper.Auth/CreateUser"
+	loginMethod    = "/gophkeeper.Auth/GetUser"
 )
 
 type ServerManager interface {

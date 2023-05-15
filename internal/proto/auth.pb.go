@@ -181,10 +181,10 @@ var file_auth_proto_goTypes = []interface{}{
 }
 var file_auth_proto_depIdxs = []int32{
 	2, // 0: gophkeeper.TokenData.expireAt:type_name -> google.protobuf.Timestamp
-	0, // 1: gophkeeper.Auth.Register:input_type -> gophkeeper.AuthData
-	0, // 2: gophkeeper.Auth.Login:input_type -> gophkeeper.AuthData
-	1, // 3: gophkeeper.Auth.Register:output_type -> gophkeeper.TokenData
-	1, // 4: gophkeeper.Auth.Login:output_type -> gophkeeper.TokenData
+	0, // 1: gophkeeper.Auth.CreateUser:input_type -> gophkeeper.AuthData
+	0, // 2: gophkeeper.Auth.GetUser:input_type -> gophkeeper.AuthData
+	1, // 3: gophkeeper.Auth.CreateUser:output_type -> gophkeeper.TokenData
+	1, // 4: gophkeeper.Auth.GetUser:output_type -> gophkeeper.TokenData
 	3, // [3:5] is the sub-list for method output_type
 	1, // [1:3] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name

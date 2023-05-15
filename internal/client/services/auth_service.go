@@ -68,7 +68,6 @@ func (s *authService) Login(ctx context.Context, username string, password strin
 		if statusErr, ok := status.FromError(err); ok && statusErr.Code() == codes.NotFound {
 			return nil, errors.New(statusErr.Message())
 		}
-		s.log.Errorf("failed to login: %v", err)
 		return nil, err
 	}
 
