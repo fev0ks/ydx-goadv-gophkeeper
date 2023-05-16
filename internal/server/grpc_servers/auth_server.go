@@ -10,13 +10,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	pb "ydx-goadv-gophkeeper/internal/api/proto"
 
 	"ydx-goadv-gophkeeper/internal/server/services"
 
 	"ydx-goadv-gophkeeper/internal/logger"
 	"ydx-goadv-gophkeeper/internal/model"
 	"ydx-goadv-gophkeeper/internal/model/errs"
-	pb "ydx-goadv-gophkeeper/internal/proto"
 )
 
 type authServer struct {

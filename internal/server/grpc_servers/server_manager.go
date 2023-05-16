@@ -5,9 +5,9 @@ import (
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	pb "ydx-goadv-gophkeeper/internal/api/proto"
 
 	"ydx-goadv-gophkeeper/internal/logger"
-	pb "ydx-goadv-gophkeeper/internal/proto"
 	"ydx-goadv-gophkeeper/internal/server/interceptors"
 	"ydx-goadv-gophkeeper/internal/server/services"
 )

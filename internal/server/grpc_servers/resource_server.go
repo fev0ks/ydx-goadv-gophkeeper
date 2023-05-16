@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"go.uber.org/zap"
+	pb "ydx-goadv-gophkeeper/internal/api/proto"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -14,7 +15,6 @@ import (
 	"ydx-goadv-gophkeeper/internal/model/consts"
 	"ydx-goadv-gophkeeper/internal/model/enum"
 	"ydx-goadv-gophkeeper/internal/model/resources"
-	pb "ydx-goadv-gophkeeper/internal/proto"
 	"ydx-goadv-gophkeeper/internal/server/services"
 	intsrv "ydx-goadv-gophkeeper/internal/services"
 )

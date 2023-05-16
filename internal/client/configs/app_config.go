@@ -60,10 +60,10 @@ func setupConfigByFlags(cfg *AppConfig) {
 
 	pflag.Parse()
 
-	if cfg.ServerPort != "" && serverPortF != "" {
+	if cfg.ServerPort == "" && serverPortF != "" {
 		cfg.ServerPort = serverPortF
 	}
-	if cfg.ServerPort != "" && privateKeyPathF != "" {
+	if cfg.PrivateKeyPath == "" && privateKeyPathF != "" {
 		cfg.PrivateKeyPath = privateKeyPathF
 	}
 }
