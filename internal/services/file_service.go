@@ -2,7 +2,6 @@ package services
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"os"
 	"time"
@@ -59,7 +58,6 @@ func (fm *fileService) ReadFile(path string, errCh chan error) (chan []byte, os.
 
 			select {
 			case buf <- buffer[:n]:
-				fmt.Println("chunk")
 			case _ = <-errCh:
 				close(buf)
 				return

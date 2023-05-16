@@ -5,6 +5,7 @@ import (
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+
 	pb "ydx-goadv-gophkeeper/internal/api/proto"
 
 	"ydx-goadv-gophkeeper/internal/logger"
@@ -13,8 +14,8 @@ import (
 )
 
 const (
-	registerMethod = "/gophkeeper.Auth/CreateUser"
-	loginMethod    = "/gophkeeper.Auth/GetUser"
+	registerMethod = "/gophkeeper.Auth/Register"
+	loginMethod    = "/gophkeeper.Auth/Login"
 )
 
 type ServerManager interface {
