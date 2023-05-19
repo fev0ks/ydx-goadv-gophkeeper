@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io"
 	"os"
 
@@ -26,6 +27,7 @@ var (
 func main() {
 	log := logger.NewLogger("main")
 	log.Infof("Server args: %s", os.Args[1:])
+	ctx, ctxClose := context.WithCancel(context.Background())
 	configPath := os.Getenv(configPathEnvVar)
 	if configPath == "" {
 		configPath = defaultConfigPath
@@ -35,7 +37,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	exitHandler := shutdown.NewExitHandler()
+	exitHandler := shutdown.NewExitHandlerWithCtx(ctxClose)
 
 	tokenHolder := &model.TokenHolder{}
 
@@ -49,8 +51,9 @@ func main() {
 	fileService := intsrv.NewFileService()
 	cryptoService := services.NewCryptService(appConfig.PrivateKey)
 	resourceService := services.NewResourceService(pb.NewResourcesClient(grpcConn), fileService, cryptoService)
-	shutdown.ProperExitDefer(exitHandler)
+	exit := shutdown.ProperExitDefer(exitHandler)
 
 	commandProcessor := terminal.NewCommandParser(buildVersion, buildDate, authService, resourceService)
-	commandProcessor.Start()
+	commandProcessor.Start(exit)
+	<-ctx.Done()
 }

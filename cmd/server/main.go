@@ -27,7 +27,7 @@ func main() {
 	log.Debugf("Build date: %s", BuildDate)
 	log.Debugf("Build commit: %s", BuildCommit)
 
-	ctx := context.Background()
+	ctx, ctxCancel := context.WithCancel(context.Background())
 
 	log.Infof("Server args: %s", os.Args[1:])
 	configPath := os.Getenv(configPathEnvVar)
@@ -42,7 +42,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	exitHandler := shutdown.NewExitHandler()
+	exitHandler := shutdown.NewExitHandlerWithCtx(ctxCancel)
 
 	userRepo := repositories.NewUserRepository(dbProvider)
 	resRepo := repositories.NewResourceRepository(dbProvider)

@@ -28,16 +28,16 @@ const (
 		"	'login' - to login\n" +
 		"	'register' - to register\n" +
 		"\n" +
-		"	's [type]' - save resource, where 'type' is: lp - LoginPassword, fl - File, bc - BankCard\n\t\n" +
+		"	's [type]' - save resource, where 'type' is: lp - LoginPassword, fl - File, bc - BankCard\n" +
 		"\n" +
 		"	'd [id]' - delete resource by id\n" +
-		"	'l [type]' - get resources by type, where 'type' is:lp - LoginPassword, fl - File, bc - BankCard\n	or get all if type is empty\n" +
+		"	'l [type]' - get resources by type, where 'type' is: lp - LoginPassword, fl - File, bc - BankCard\n	or get all if type is empty\n" +
 		"	'g [id]' - get loginPassword or BankCard by id\n" +
 		"	'gf [id]' - get file by id\n"
 )
 
 type CommandParser interface {
-	Start()
+	Start(exit chan struct{})
 }
 
 type commandParser struct {
@@ -73,20 +73,35 @@ func NewCommandParser(
 	return cp
 }
 
-func (cp *commandParser) Start() {
+func (cp *commandParser) Start(exit chan struct{}) {
+	commandHandled := make(chan struct{})
+Loop:
 	for {
-		cmd := cp.readString("")
-		if len(cmd) == 0 {
-			continue
+		go cp.processCommands(commandHandled)
+		select {
+		case <-commandHandled:
+		case <-exit:
+			break Loop
 		}
-
-		result, err := cp.handle(cmd)
-		if err != nil {
-			fmt.Printf("error: %v\n", err.Error())
-			continue
-		}
-		fmt.Printf("%s\n", result)
 	}
+	fmt.Print("program is closed\n")
+}
+
+func (cp *commandParser) processCommands(commandHandled chan struct{}) {
+	defer func() {
+		commandHandled <- struct{}{}
+	}()
+	cmd := cp.readString("")
+	if len(cmd) == 0 {
+		return
+	}
+	result, err := cp.handle(cmd)
+	if err != nil {
+		fmt.Printf("error: %v\n", err.Error())
+		return
+	}
+	fmt.Printf("%s\n", result)
+	return
 }
 
 func (cp *commandParser) handle(input string) (string, error) {

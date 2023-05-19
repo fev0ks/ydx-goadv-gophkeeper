@@ -22,6 +22,7 @@ var (
 )
 
 type ExitHandler struct {
+	mainCtxCanceler   context.CancelFunc
 	log               *zap.SugaredLogger
 	httpServer        *http.Server
 	grpcServer        *grpc.Server
@@ -33,9 +34,10 @@ type ExitHandler struct {
 	newFuncAllowed    bool
 }
 
-func NewExitHandler() *ExitHandler {
+func NewExitHandlerWithCtx(mainCtxCanceler context.CancelFunc) *ExitHandler {
 	return &ExitHandler{
 		log:               logger.NewLogger("exit-hdr"),
+		mainCtxCanceler:   mainCtxCanceler,
 		newFuncAllowed:    true,
 		funcsInProcessing: sync.WaitGroup{},
 	}
@@ -75,7 +77,7 @@ func (eh *ExitHandler) FuncFinished(alias string) {
 	eh.funcsInProcessing.Add(-1)
 }
 
-func ProperExitDefer(exitHandler *ExitHandler) {
+func ProperExitDefer(exitHandler *ExitHandler) chan struct{} {
 	exitHandler.log.Info("Graceful exit handler is activated")
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals,
@@ -83,12 +85,15 @@ func ProperExitDefer(exitHandler *ExitHandler) {
 		syscall.SIGTERM,
 		syscall.SIGQUIT,
 	)
+	exit := make(chan struct{})
 	go func() {
 		s := <-signals
+		exit <- struct{}{}
 		exitHandler.log.Infof("Received a signal '%s'", s)
 		exitHandler.setNewFuncExecutionAllowed(false)
 		exitHandler.shutdown()
 	}()
+	return exit
 }
 
 func (eh *ExitHandler) shutdown() {
@@ -102,7 +107,7 @@ func (eh *ExitHandler) shutdown() {
 	select {
 	case <-successfullyFinished:
 		log.Println("System finished work, graceful shutdown")
-		os.Exit(0)
+		eh.mainCtxCanceler()
 	case <-time.After(1 * time.Minute):
 		log.Println("System has not shutdown in time '1m', shutdown with interruption")
 		os.Exit(1)
@@ -132,26 +137,34 @@ func (eh *ExitHandler) waitForShutdownServer() {
 }
 
 func (eh *ExitHandler) endHeldObjects() {
-	log.Println("ToExecute final funcs")
-	for _, execute := range eh.ToExecute {
-		err := execute(context.Background())
-		if err != nil {
-			eh.log.Infof("func error: %v", err)
+	if len(eh.ToExecute) > 0 {
+		log.Println("ToExecute final funcs")
+		for _, execute := range eh.ToExecute {
+			err := execute(context.Background())
+			if err != nil {
+				eh.log.Infof("func error: %v", err)
+			}
 		}
 	}
-	log.Println("ToCancel active contexts")
-	for _, cancel := range eh.ToCancel {
-		cancel()
+	if len(eh.ToCancel) > 0 {
+		log.Println("ToCancel active contexts")
+		for _, cancel := range eh.ToCancel {
+			cancel()
+		}
 	}
-	log.Println("ToStop active goroutines")
-	for _, toStop := range eh.ToStop {
-		close(toStop)
+	if len(eh.ToStop) > 0 {
+		log.Println("ToStop active goroutines")
+		for _, toStop := range eh.ToStop {
+			close(toStop)
+		}
 	}
-	log.Println("ToClose active resources")
-	for _, toClose := range eh.ToClose {
-		err := toClose.Close()
-		if err != nil {
-			eh.log.Infof("failed to close an resource: %v", err)
+	if len(eh.ToClose) > 0 {
+		log.Println("ToClose active resources")
+		for _, toClose := range eh.ToClose {
+			err := toClose.Close()
+			if err != nil {
+				eh.log.Infof("failed to close an resource: %v", err)
+			}
 		}
 	}
 	log.Println("Success end final work")
