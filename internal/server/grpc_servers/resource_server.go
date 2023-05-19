@@ -16,6 +16,7 @@ import (
 	"ydx-goadv-gophkeeper/pkg/logger"
 	"ydx-goadv-gophkeeper/pkg/model/enum"
 	intsrv "ydx-goadv-gophkeeper/pkg/services"
+	"ydx-goadv-gophkeeper/pkg/shutdown"
 )
 
 type ResourceServer struct {
@@ -23,16 +24,19 @@ type ResourceServer struct {
 	pb.UnimplementedResourcesServer
 	service     services.ResourceService
 	fileService intsrv.FileService
+	eh          *shutdown.ExitHandler
 }
 
 func NewResourcesServer(
 	service services.ResourceService,
 	fileService intsrv.FileService,
+	eh *shutdown.ExitHandler,
 ) pb.ResourcesServer {
 	return &ResourceServer{
 		log:         logger.NewLogger("res-service"),
 		service:     service,
 		fileService: fileService,
+		eh:          eh,
 	}
 }
 
@@ -92,7 +96,8 @@ func (s *ResourceServer) Get(ctx context.Context, id *pb.ResourceId) (*pb.Resour
 
 // SaveFile : TODO Save file by stream chunks
 func (s *ResourceServer) SaveFile(stream pb.Resources_SaveFileServer) error {
-
+	s.eh.AddFuncInProcessing("saving file")
+	defer s.eh.FuncFinished("saving file")
 	chunk, err := stream.Recv()
 	if err == io.EOF {
 		return errors.New("failed to save file: empty stream")
@@ -142,6 +147,8 @@ Loop:
 
 // SaveFile : TODO Save file by stream chunks
 func (s *ResourceServer) GetFile(resId *pb.ResourceId, stream pb.Resources_GetFileServer) error {
+	s.eh.AddFuncInProcessing("sending file")
+	defer s.eh.FuncFinished("sending file")
 	resource, err := s.service.Get(stream.Context(), resId.GetId(), s.getUserIdFromCtx(stream.Context()))
 	if err != nil {
 		return err

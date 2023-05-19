@@ -16,6 +16,7 @@ import (
 	"ydx-goadv-gophkeeper/internal/client/model/resources"
 	"ydx-goadv-gophkeeper/internal/client/services"
 	"ydx-goadv-gophkeeper/pkg/model/enum"
+	"ydx-goadv-gophkeeper/pkg/shutdown"
 )
 
 const (
@@ -44,6 +45,7 @@ type commandParser struct {
 	scanner         *bufio.Scanner
 	authService     services.AuthService
 	resourceService services.ResourceService
+	eh              *shutdown.ExitHandler
 	commands        map[string]func(args []string) (string, error)
 }
 
@@ -52,11 +54,13 @@ func NewCommandParser(
 	buildDate string,
 	authService services.AuthService,
 	resourceService services.ResourceService,
+	eh *shutdown.ExitHandler,
 ) CommandParser {
 	fmt.Printf("buildVersion='%s' buildDate='%s'\n%s\n", buildVersion, buildDate, helpMsg)
 	cp := &commandParser{
 		authService:     authService,
 		resourceService: resourceService,
+		eh:              eh,
 	}
 	cp.scanner = cp.initScanner()
 	cp.commands = map[string]func(args []string) (string, error){
@@ -149,6 +153,8 @@ func (cp *commandParser) handleGetFile(args []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	cp.eh.AddFuncInProcessing("getting file")
+	defer cp.eh.FuncFinished("getting file")
 	path, err := cp.resourceService.GetFile(context.Background(), int32(resId))
 	if err != nil {
 		return "", err
@@ -252,6 +258,8 @@ func (cp *commandParser) saveTextResource(resource any, meta string, resType enu
 func (cp *commandParser) saveFile() (string, error) {
 	filePath := cp.readString("input file path")
 	meta := cp.readString("input description")
+	cp.eh.AddFuncInProcessing("sending file")
+	defer cp.eh.FuncFinished("sending file")
 	id, err := cp.resourceService.SaveFile(context.Background(), filePath, []byte(meta))
 	if err != nil {
 		return "", err

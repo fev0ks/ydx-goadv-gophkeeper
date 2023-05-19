@@ -53,7 +53,7 @@ func main() {
 	fileProcessor := intsrv.NewFileService()
 
 	authServer := servers.NewAuthServer(userSrv, tokenSrv)
-	resourcesServer := servers.NewResourcesServer(resSrv, fileProcessor)
+	resourcesServer := servers.NewResourcesServer(resSrv, fileProcessor, exitHandler)
 
 	serverManager := servers.NewServerManager(tokenSrv)
 	serverManager.RegisterResourcesServer(resourcesServer)

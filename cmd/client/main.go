@@ -53,7 +53,7 @@ func main() {
 	resourceService := services.NewResourceService(pb.NewResourcesClient(grpcConn), fileService, cryptoService)
 	exit := shutdown.ProperExitDefer(exitHandler)
 
-	commandProcessor := terminal.NewCommandParser(buildVersion, buildDate, authService, resourceService)
+	commandProcessor := terminal.NewCommandParser(buildVersion, buildDate, authService, resourceService, exitHandler)
 	commandProcessor.Start(exit)
 	<-ctx.Done()
 }
