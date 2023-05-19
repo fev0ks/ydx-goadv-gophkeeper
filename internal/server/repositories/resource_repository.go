@@ -36,7 +36,7 @@ func (r *resourceRepository) Save(ctx context.Context, resource *model.Resource)
 	conn, err := r.db.GetConnection(ctx)
 	if err != nil {
 		r.log.Errorf("failed to get db connection: %v", err)
-		return err
+		return errs.DbError{Err: err}
 	}
 	defer conn.Release()
 	var resId int32
@@ -51,11 +51,11 @@ func (r *resourceRepository) Save(ctx context.Context, resource *model.Resource)
 	err = row.Scan(&resId)
 	if err != nil {
 		r.log.Errorf("failed to scan resId: %v", err)
-		return err
+		return errs.DbError{Err: err}
 	}
 	resource.Id = resId
 	r.log.Infof("Resource saved: %v", resource)
-	return err
+	return nil
 }
 
 func (r *resourceRepository) Get(ctx context.Context, resId int32, userId int32) (*model.Resource, error) {
@@ -64,7 +64,7 @@ func (r *resourceRepository) Get(ctx context.Context, resId int32, userId int32)
 	conn, err := r.db.GetConnection(ctx)
 	if err != nil {
 		r.log.Errorf("failed to get db connection: %v", err)
-		return nil, err
+		return nil, errs.DbError{Err: err}
 	}
 	defer conn.Release()
 	var row pgx.Row
@@ -76,9 +76,9 @@ func (r *resourceRepository) Get(ctx context.Context, resId int32, userId int32)
 	}
 	if err != nil {
 		r.log.Errorf("failed to parse scan resourse '%d' result row: %v", resId, err)
-		return nil, err
+		return nil, errs.DbError{Err: err}
 	}
-	return &result, err
+	return &result, nil
 }
 
 func (r *resourceRepository) GetResDescriptionsByType(
@@ -91,7 +91,7 @@ func (r *resourceRepository) GetResDescriptionsByType(
 	conn, err := r.db.GetConnection(ctx)
 	if err != nil {
 		r.log.Errorf("failed to get db connection: %v", err)
-		return results, err
+		return results, errs.DbError{Err: err}
 	}
 	defer conn.Release()
 
@@ -112,13 +112,17 @@ func (r *resourceRepository) GetResDescriptionsByType(
 			resType,
 		)
 	}
+	if err != nil {
+		r.log.Errorf("failed to query resources for '%d' user: %v", userId, err)
+		return nil, errs.DbError{Err: err}
+	}
 	defer rows.Close()
 	for rows.Next() {
 		resDescr := &model.ResourceDescription{}
 		err := rows.Scan(&resDescr.Id, &resDescr.Meta, &resDescr.Type)
 		if err != nil {
 			r.log.Errorf("failed to scan '%s' resources of userId '%d': %v", restype.TypeToArg[resType], userId, err)
-			return nil, fmt.Errorf("failed to read '%d' resources of userId '%d': %v", resType, userId, err)
+			return nil, errs.DbError{Err: fmt.Errorf("failed to read '%d' resources of userId '%d': %v", resType, userId, err)}
 		}
 		results = append(results, resDescr)
 	}
@@ -130,14 +134,14 @@ func (r *resourceRepository) Delete(ctx context.Context, resId int32, userId int
 	conn, err := r.db.GetConnection(ctx)
 	if err != nil {
 		r.log.Errorf("failed to get db connection: %v", err)
-		return err
+		return errs.DbError{Err: err}
 	}
 	defer conn.Release()
 
 	_, err = conn.Exec(ctx, "delete from resources where id = $1 and user_id = $2", resId, userId)
 	if err != nil {
 		r.log.Errorf("failed to delete  '%d' resource of '%d' user: %v", resId, userId, err)
-		return err
+		return errs.DbError{Err: err}
 	}
 	return nil
 }

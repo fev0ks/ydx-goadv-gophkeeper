@@ -8,6 +8,7 @@ import (
 
 	"ydx-goadv-gophkeeper/internal/server/model"
 	"ydx-goadv-gophkeeper/internal/server/model/consts"
+	"ydx-goadv-gophkeeper/internal/server/model/errs"
 	"ydx-goadv-gophkeeper/internal/server/services"
 	"ydx-goadv-gophkeeper/pkg/logger"
 )
@@ -53,7 +54,7 @@ func (tp *requestTokenProcessor) TokenInterceptor() grpc.UnaryServerInterceptor 
 			userId, err := tp.tokenService.ExtractUserId(ctx)
 			if err != nil {
 				tp.log.Errorf("failed to extract userId from request token: %tp", err)
-				return nil, err
+				return nil, errs.TokenError{Err: err}
 			}
 			ctxWithUserId := context.WithValue(ctx, consts.UserIDCtxKey, userId)
 			tp.log.Infof("Retrieved from token userId: %d", userId)
@@ -74,7 +75,7 @@ func (tp *requestTokenProcessor) TokenStreamInterceptor() grpc.StreamServerInter
 			userId, err := tp.tokenService.ExtractUserId(ss.Context())
 			if err != nil {
 				tp.log.Errorf("failed to extract userId from request token: %tp", err)
-				return err
+				return errs.TokenError{Err: err}
 			}
 			ctxWithUserId := context.WithValue(ss.Context(), consts.UserIDCtxKey, userId)
 			tp.log.Infof("Retrieved from token userId: %d", userId)

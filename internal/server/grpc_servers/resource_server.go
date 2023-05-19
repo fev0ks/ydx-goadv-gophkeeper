@@ -2,16 +2,18 @@ package grpc_servers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	pb "ydx-goadv-gophkeeper/api/proto"
 	"ydx-goadv-gophkeeper/internal/server/model"
 	"ydx-goadv-gophkeeper/internal/server/model/consts"
+	"ydx-goadv-gophkeeper/internal/server/model/errs"
 	"ydx-goadv-gophkeeper/internal/server/services"
 	"ydx-goadv-gophkeeper/pkg/logger"
 	"ydx-goadv-gophkeeper/pkg/model/enum"
@@ -52,7 +54,7 @@ func (s *ResourceServer) Save(ctx context.Context, resource *pb.Resource) (*pb.R
 	err := s.service.Save(ctx, res)
 	if err != nil {
 		s.log.Errorf("failed to save resource: %v", res.ResourceDescription)
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &pb.ResourceId{Id: res.Id}, nil
 }
@@ -61,7 +63,7 @@ func (s *ResourceServer) Delete(ctx context.Context, resId *pb.ResourceId) (*emp
 	s.log.Infof("Deleting resource: %d", resId.Id)
 	if err := s.service.Delete(ctx, resId.Id, s.getUserIdFromCtx(ctx)); err != nil {
 		s.log.Errorf("failed to delete resource: %d", resId.Id)
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -73,7 +75,7 @@ func (s *ResourceServer) GetDescriptions(query *pb.Query, stream pb.Resources_Ge
 	resourceDescriptions, err := s.service.GetDescriptions(stream.Context(), userId, t)
 	if err != nil {
 		s.log.Errorf("failed to collect list descriptions of resources for user: %d", userId)
-		return err
+		return status.Error(codes.Internal, err.Error())
 	}
 
 	for _, resDescription := range resourceDescriptions {
@@ -84,7 +86,7 @@ func (s *ResourceServer) GetDescriptions(query *pb.Query, stream pb.Resources_Ge
 		})
 		if err != nil {
 			s.log.Errorf("failed to send '%v' of  user %d: %v", resDescription, userId, err)
-			return err
+			return status.Error(codes.Internal, err.Error())
 		}
 	}
 
@@ -96,7 +98,7 @@ func (s *ResourceServer) Get(ctx context.Context, id *pb.ResourceId) (*pb.Resour
 	result, err := s.service.Get(ctx, id.Id, s.getUserIdFromCtx(ctx))
 	if err != nil {
 		s.log.Errorf("failed to get resource: %d", id.GetId())
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &pb.Resource{
 		Type: pb.TYPE(result.Type),
@@ -113,7 +115,7 @@ func (s *ResourceServer) SaveFile(stream pb.Resources_SaveFileServer) error {
 	chunk, err := stream.Recv()
 	if err == io.EOF {
 		s.log.Errorf("failed to save file resource for '%d' user: empty stream", userId)
-		return errors.New("failed to save file: empty stream")
+		return status.Error(codes.InvalidArgument, "empty stream")
 	}
 	if err != nil {
 		s.log.Errorf("failed to save file resource for '%d' user: %v", userId, err)
@@ -134,27 +136,27 @@ func (s *ResourceServer) SaveFile(stream pb.Resources_SaveFileServer) error {
 	errCh, err := s.fileService.SaveFile(fmt.Sprintf("./cmd/server/%d", resId), chunks)
 	if err != nil {
 		s.log.Errorf("failed to save file '%d' for '%d' user: %v", resId, userId, err)
-		return err
+		return status.Error(codes.Internal, err.Error())
 	}
 Loop:
 	for {
 		chunk, err = stream.Recv()
 		if err == io.EOF {
-			s.log.Errorf("End of stream, resource: %d", resId)
+			s.log.Debugf("End of stream, resource: %d", resId)
 			close(chunks)
 			break Loop
 		}
 		if err != nil {
 			close(chunks)
 			s.log.Errorf("failed to get stream chunk, resource: %d", resId)
-			return fmt.Errorf("failed to save file: %v", err)
+			return status.Error(codes.Internal, errs.StreamError{Err: err}.Error())
 		}
 		select {
 		case chunks <- chunk.Data:
 		case err := <-errCh:
 			s.log.Errorf("failed to save stream chunk of '%d' resource: %v", resId, err)
 			close(chunks)
-			break Loop
+			return status.Error(codes.Internal, err.Error())
 		}
 	}
 
@@ -171,7 +173,7 @@ func (s *ResourceServer) GetFile(resId *pb.ResourceId, stream pb.Resources_GetFi
 	resource, err := s.service.Get(stream.Context(), resId.GetId(), userId)
 	if err != nil {
 		s.log.Errorf("failed to get '%d' file description for '%d' user: %v", resId.GetId(), userId, err)
-		return err
+		return status.Error(codes.Internal, err.Error())
 	}
 	err = stream.Send(&pb.FileChunk{
 		Meta: resource.Meta,
@@ -179,13 +181,13 @@ func (s *ResourceServer) GetFile(resId *pb.ResourceId, stream pb.Resources_GetFi
 	})
 	if err != nil {
 		s.log.Errorf("failed to send '%d' file description for '%d' user: %v", resId.GetId(), userId, err)
-		return err
+		return status.Error(codes.Internal, errs.StreamError{Err: err}.Error())
 	}
 	errCh := make(chan error)
 	chunks, _, err := s.fileService.ReadFile(fmt.Sprintf("./cmd/server/%d", resource.Id), errCh)
 	if err != nil {
 		s.log.Errorf("failed to read file '%d': %v", resource.Id, err)
-		return err
+		return status.Error(codes.Internal, err.Error())
 	}
 
 Loop:
@@ -201,7 +203,7 @@ Loop:
 		if err != nil {
 			s.log.Errorf("failed to send '%d' file's chunk: %v", resource.Id, err)
 			errCh <- err
-			return err
+			return status.Error(codes.Internal, errs.StreamError{Err: err}.Error())
 		}
 	}
 	return nil

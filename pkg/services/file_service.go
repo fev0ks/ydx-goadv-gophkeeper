@@ -8,6 +8,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"ydx-goadv-gophkeeper/internal/server/model/errs"
 	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
@@ -32,12 +33,12 @@ func (fm *fileService) ReadFile(path string, errCh chan error) (chan []byte, os.
 	buf := make(chan []byte)
 	file, err := os.Open(path)
 	if err != nil {
-		return buf, nil, err
+		return buf, nil, errs.FileProcessingError{Err: err}
 	}
 
 	stat, err := file.Stat()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errs.FileProcessingError{Err: err}
 	}
 
 	go func() {
@@ -76,7 +77,7 @@ func (fm *fileService) SaveFile(path string, chunks chan []byte) (chan error, er
 	errCh := make(chan error)
 	file, err := os.Create(path)
 	if err != nil {
-		return nil, err
+		return nil, errs.FileProcessingError{Err: err}
 	}
 	go func() {
 		writer := bufio.NewWriter(file)
@@ -87,7 +88,7 @@ func (fm *fileService) SaveFile(path string, chunks chan []byte) (chan error, er
 				_, err = writer.Write(bytes)
 				if err != nil {
 					fm.log.Errorf("failed to save file: %v", err)
-					errCh <- err
+					errCh <- errs.FileProcessingError{Err: err}
 					return
 				}
 				continue

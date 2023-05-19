@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"ydx-goadv-gophkeeper/internal/server/configs"
+	"ydx-goadv-gophkeeper/internal/server/model/errs"
 	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
@@ -36,11 +37,11 @@ func NewPgProvider(ctx context.Context, appConfig *configs.AppConfig) (DBProvide
 	pg := &pgProvider{log: log}
 	err := pg.connect(ctx, appConfig.DBConnection, appConfig.DBMaxConnections)
 	if err != nil {
-		return nil, err
+		return nil, errs.DbError{Err: err}
 	}
 	err = pg.migrationUp(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errs.DbError{Err: err}
 	}
 	return pg, nil
 }
@@ -53,12 +54,12 @@ func (p *pgProvider) connect(ctx context.Context, connString string, maxConns in
 	p.log.Infof("Trying to connect: %s", connString)
 	dbConfig, err := pgxpool.ParseConfig(connString)
 	if err != nil {
-		return err
+		return errs.DbError{Err: err}
 	}
 	dbConfig.MaxConns = int32(maxConns)
 	conn, err := pgxpool.ConnectConfig(ctx, dbConfig)
 	if err != nil {
-		return fmt.Errorf("failed to init pg repository: %v", err)
+		return errs.DbError{Err: fmt.Errorf("failed to init pg repository: %v", err)}
 	}
 	p.conn = conn
 	return nil
@@ -66,7 +67,7 @@ func (p *pgProvider) connect(ctx context.Context, connString string, maxConns in
 
 func (p *pgProvider) migrationUp(ctx context.Context) error {
 	if p.conn == nil {
-		return errors.New("failed to start db migration: db connection is empty")
+		return errs.InternalError{Err: errors.New("failed to start db migration: db connection is empty")}
 	}
 	acquireConn, err := p.conn.Acquire(ctx)
 	if err != nil {
@@ -75,20 +76,23 @@ func (p *pgProvider) migrationUp(ctx context.Context) error {
 	p.log.Info("Migrations are started")
 	migrator, err := migrate.NewMigrator(ctx, acquireConn.Conn(), "schema_version")
 	if err != nil {
-		p.log.Fatalf("Unable to create a migrator: %v\n", err)
+		p.log.Errorf("Unable to create a migrator: %v\n", err)
+		return errs.InternalError{Err: err}
 	}
 	err = migrator.LoadMigrations(migrationsDir)
 	if err != nil {
-		p.log.Fatalf("Unable to load migrations: %v\n", err)
+		p.log.Errorf("Unable to load migrations: %v\n", err)
+		return errs.InternalError{Err: err}
 	}
 	err = migrator.Migrate(ctx)
 	if err != nil {
-		p.log.Fatalf("Unable to migrate: %v\n", err)
+		p.log.Errorf("Unable to migrate: %v\n", err)
+		return errs.InternalError{Err: err}
 	}
 
 	ver, err := migrator.GetCurrentVersion(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get current schema version: %v", err)
+		return errs.DbError{Err: fmt.Errorf("failed to get current schema version: %v", err)}
 	}
 	p.log.Infof("Migration done. Current schema version: %d", ver)
 	return nil
@@ -97,7 +101,7 @@ func (p *pgProvider) migrationUp(ctx context.Context) error {
 func (p *pgProvider) GetConnection(ctx context.Context) (*pgxpool.Conn, error) {
 	acquireConn, err := p.conn.Acquire(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errs.DbConnectionError{Err: err}
 	}
 	return acquireConn, err
 }
@@ -106,13 +110,13 @@ func (p *pgProvider) HealthCheck(ctx context.Context) error {
 	conn, err := p.GetConnection(ctx)
 	if err != nil {
 		p.log.Error("failed to check connection to Postgres DB: %v", err)
-		return err
+		return errs.InternalError{err}
 	}
 	defer conn.Release()
 	err = conn.Conn().Ping(ctx)
 	if err != nil {
 		p.log.Error("failed to check connection to Postgres DB: %v", err)
-		return err
+		return errs.InternalError{err}
 	}
 	p.log.Info("Postgres DB connection is active")
 	return nil

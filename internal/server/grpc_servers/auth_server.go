@@ -97,7 +97,7 @@ func (s *authServer) genToken(id int32) (*pb.TokenData, error) {
 	token, err := s.tokenService.Generate(id, expireAt)
 	if err != nil {
 		s.log.Errorf("failed to generate token: %v", err)
-		return nil, status.Error(codes.Internal, "token generation error")
+		return nil, status.Error(codes.Internal, fmt.Sprintf("token generation error: %v", err))
 	}
 	s.log.Infof("Token generated successfully: %v", zap.Time("expireAt", expireAt))
 	return &pb.TokenData{Token: token, ExpireAt: timestamppb.New(expireAt)}, nil

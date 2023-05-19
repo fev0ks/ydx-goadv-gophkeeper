@@ -45,7 +45,7 @@ func (s *tokenService) ExtractUserId(ctx context.Context) (int32, error) {
 	}
 	var tokenStr string
 	if values := md.Get(token); len(values) == 0 {
-		return 0, errs.ErrTokenNotFound
+		return 0, errs.TokenError{Err: errs.ErrTokenNotFound}
 	} else {
 		tokenStr = values[0]
 	}
@@ -62,7 +62,7 @@ func (s *tokenService) extract(tokenStr string) (int32, error) {
 		return claims.Id, nil
 	}
 	if !token.Valid {
-		return 0, errs.ErrTokenInvalid
+		return 0, errs.TokenError{Err: errs.ErrTokenInvalid}
 	}
 	return 0, err
 }

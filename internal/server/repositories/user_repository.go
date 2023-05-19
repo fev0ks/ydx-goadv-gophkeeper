@@ -34,7 +34,7 @@ func (r *userRepository) CreateUser(ctx context.Context, user *model.User) (int3
 	conn, err := r.db.GetConnection(ctx)
 	if err != nil {
 		r.log.Errorf("failed to get db connection: %v", err)
-		return 0, err
+		return 0, errs.DbError{Err: err}
 	}
 	defer conn.Release()
 
@@ -47,7 +47,7 @@ func (r *userRepository) CreateUser(ctx context.Context, user *model.User) (int3
 	}
 	if err != nil {
 		r.log.Errorf("failed to save user '%s': %v", user.Username, err)
-		return 0, fmt.Errorf("failed to save user '%s': %v", user.Username, err)
+		return 0, errs.DbError{Err: fmt.Errorf("failed to save user '%s': %v", user.Username, err)}
 	}
 	return userId, nil
 }
@@ -56,7 +56,7 @@ func (r *userRepository) GetUser(ctx context.Context, username string) (*model.U
 	conn, err := r.db.GetConnection(ctx)
 	if err != nil {
 		r.log.Errorf("failed to get db connection: %v", err)
-		return nil, err
+		return nil, errs.DbError{Err: err}
 	}
 	defer conn.Release()
 	user := &model.User{}
@@ -68,7 +68,7 @@ func (r *userRepository) GetUser(ctx context.Context, username string) (*model.U
 	}
 	if err != nil {
 		r.log.Errorf("failed to scan user row '%s': %v", user.Username, err)
-		return nil, fmt.Errorf("failed to scan user row '%s': %v", user.Username, err)
+		return nil, errs.DbError{Err: fmt.Errorf("failed to scan user row '%s': %v", user.Username, err)}
 	}
 
 	return user, nil
