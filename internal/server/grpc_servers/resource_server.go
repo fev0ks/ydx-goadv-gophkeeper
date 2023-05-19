@@ -10,12 +10,12 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	pb "ydx-goadv-gophkeeper/api/proto"
-	"ydx-goadv-gophkeeper/internal/logger"
-	"ydx-goadv-gophkeeper/internal/model/consts"
-	"ydx-goadv-gophkeeper/internal/model/enum"
-	"ydx-goadv-gophkeeper/internal/model/resources"
+	"ydx-goadv-gophkeeper/internal/server/model"
+	"ydx-goadv-gophkeeper/internal/server/model/consts"
 	"ydx-goadv-gophkeeper/internal/server/services"
-	intsrv "ydx-goadv-gophkeeper/internal/services"
+	"ydx-goadv-gophkeeper/pkg/logger"
+	"ydx-goadv-gophkeeper/pkg/model/enum"
+	intsrv "ydx-goadv-gophkeeper/pkg/services"
 )
 
 type ResourceServer struct {
@@ -37,7 +37,7 @@ func NewResourcesServer(
 }
 
 func (s *ResourceServer) Save(ctx context.Context, resource *pb.Resource) (*pb.ResourceId, error) {
-	res := &resources.Resource{
+	res := &model.Resource{
 		UserId: s.getUserIdFromCtx(ctx),
 		Data:   resource.Data,
 	}

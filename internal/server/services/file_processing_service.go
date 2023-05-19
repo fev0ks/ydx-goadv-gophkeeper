@@ -3,7 +3,7 @@ package services
 import (
 	"go.uber.org/zap"
 
-	"ydx-goadv-gophkeeper/internal/logger"
+	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
 type FileProcessor interface {

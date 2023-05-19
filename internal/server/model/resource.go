@@ -1,6 +1,8 @@
-package resources
+package model
 
-import "ydx-goadv-gophkeeper/internal/model/enum"
+import (
+	"ydx-goadv-gophkeeper/pkg/model/enum"
+)
 
 type Resource struct {
 	UserId int32  `db:"user_id"`

@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	"ydx-goadv-gophkeeper/internal/logger"
+	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
 var (

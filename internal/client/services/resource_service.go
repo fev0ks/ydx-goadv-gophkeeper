@@ -10,16 +10,17 @@ import (
 	"go.uber.org/zap"
 
 	pb "ydx-goadv-gophkeeper/api/proto"
-	"ydx-goadv-gophkeeper/internal/logger"
-	"ydx-goadv-gophkeeper/internal/model/enum"
-	"ydx-goadv-gophkeeper/internal/model/resources"
-	intsrv "ydx-goadv-gophkeeper/internal/services"
+	"ydx-goadv-gophkeeper/internal/client/model/resources"
+	resources2 "ydx-goadv-gophkeeper/internal/server/model"
+	"ydx-goadv-gophkeeper/pkg/logger"
+	"ydx-goadv-gophkeeper/pkg/model/enum"
+	intsrv "ydx-goadv-gophkeeper/pkg/services"
 )
 
 type ResourceService interface {
 	Save(ctx context.Context, resType enum.ResourceType, data []byte, meta []byte) (int32, error)
 	Delete(ctx context.Context, resId int32) error
-	GetDescriptions(ctx context.Context, resType enum.ResourceType) ([]*resources.ResourceDescription, error)
+	GetDescriptions(ctx context.Context, resType enum.ResourceType) ([]*resources2.ResourceDescription, error)
 	Get(ctx context.Context, resId int32) (*resources.ResourceInfo, error)
 	SaveFile(ctx context.Context, path string, meta []byte) (int32, error)
 	GetFile(ctx context.Context, resId int32) (string, error)
@@ -71,12 +72,12 @@ func (s *resourceService) Delete(ctx context.Context, resId int32) error {
 	return err
 }
 
-func (s *resourceService) GetDescriptions(ctx context.Context, resType enum.ResourceType) ([]*resources.ResourceDescription, error) {
+func (s *resourceService) GetDescriptions(ctx context.Context, resType enum.ResourceType) ([]*resources2.ResourceDescription, error) {
 	stream, err := s.resourceClient.GetDescriptions(ctx, &pb.Query{ResourceType: pb.TYPE(resType)})
 	if err != nil {
 		return nil, err
 	}
-	results := make([]*resources.ResourceDescription, 0)
+	results := make([]*resources2.ResourceDescription, 0)
 	for {
 		descr, err := stream.Recv()
 		if err == io.EOF {
@@ -85,7 +86,7 @@ func (s *resourceService) GetDescriptions(ctx context.Context, resType enum.Reso
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, &resources.ResourceDescription{
+		results = append(results, &resources2.ResourceDescription{
 			Id:   descr.Id,
 			Meta: descr.Meta,
 			Type: enum.ResourceType(descr.Type),

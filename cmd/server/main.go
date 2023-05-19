@@ -4,13 +4,13 @@ import (
 	"context"
 	"os"
 
-	"ydx-goadv-gophkeeper/internal/logger"
 	"ydx-goadv-gophkeeper/internal/server/configs"
 	servers "ydx-goadv-gophkeeper/internal/server/grpc_servers"
 	"ydx-goadv-gophkeeper/internal/server/repositories"
 	"ydx-goadv-gophkeeper/internal/server/services"
-	intsrv "ydx-goadv-gophkeeper/internal/services"
-	"ydx-goadv-gophkeeper/internal/shutdown"
+	"ydx-goadv-gophkeeper/pkg/logger"
+	intsrv "ydx-goadv-gophkeeper/pkg/services"
+	"ydx-goadv-gophkeeper/pkg/shutdown"
 )
 
 var (

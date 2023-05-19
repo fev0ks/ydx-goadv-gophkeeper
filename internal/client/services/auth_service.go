@@ -11,7 +11,7 @@ import (
 
 	pb "ydx-goadv-gophkeeper/api/proto"
 	"ydx-goadv-gophkeeper/internal/client/model"
-	"ydx-goadv-gophkeeper/internal/logger"
+	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
 type AuthService interface {

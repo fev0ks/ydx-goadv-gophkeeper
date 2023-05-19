@@ -12,11 +12,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "ydx-goadv-gophkeeper/api/proto"
+	"ydx-goadv-gophkeeper/internal/server/model"
+	"ydx-goadv-gophkeeper/internal/server/model/errs"
 	"ydx-goadv-gophkeeper/internal/server/services"
-
-	"ydx-goadv-gophkeeper/internal/logger"
-	"ydx-goadv-gophkeeper/internal/model"
-	"ydx-goadv-gophkeeper/internal/model/errs"
+	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
 type authServer struct {

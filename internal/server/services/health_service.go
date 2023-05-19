@@ -7,8 +7,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"ydx-goadv-gophkeeper/internal/logger"
 	"ydx-goadv-gophkeeper/internal/server/repositories"
+	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
 type HealthChecker struct {

@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"ydx-goadv-gophkeeper/internal/model"
+	"ydx-goadv-gophkeeper/internal/server/model"
 	"ydx-goadv-gophkeeper/internal/server/repositories"
 )
 

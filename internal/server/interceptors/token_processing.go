@@ -6,10 +6,10 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	"ydx-goadv-gophkeeper/internal/logger"
-	"ydx-goadv-gophkeeper/internal/model"
-	"ydx-goadv-gophkeeper/internal/model/consts"
+	"ydx-goadv-gophkeeper/internal/server/model"
+	"ydx-goadv-gophkeeper/internal/server/model/consts"
 	"ydx-goadv-gophkeeper/internal/server/services"
+	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
 type RequestTokenProcessor interface {

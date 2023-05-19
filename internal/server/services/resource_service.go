@@ -5,19 +5,19 @@ import (
 
 	"go.uber.org/zap"
 
-	"ydx-goadv-gophkeeper/internal/logger"
-	"ydx-goadv-gophkeeper/internal/model/enum"
-	"ydx-goadv-gophkeeper/internal/model/resources"
+	"ydx-goadv-gophkeeper/internal/server/model"
 	"ydx-goadv-gophkeeper/internal/server/repositories"
+	"ydx-goadv-gophkeeper/pkg/logger"
+	"ydx-goadv-gophkeeper/pkg/model/enum"
 )
 
 type ResourceService interface {
-	Save(ctx context.Context, res *resources.Resource) error
+	Save(ctx context.Context, res *model.Resource) error
 	Delete(ctx context.Context, resId, userId int32) error
-	GetDescriptions(ctx context.Context, userId int32, resType enum.ResourceType) ([]*resources.ResourceDescription, error)
-	Get(ctx context.Context, resId int32, userId int32) (*resources.Resource, error)
+	GetDescriptions(ctx context.Context, userId int32, resType enum.ResourceType) ([]*model.ResourceDescription, error)
+	Get(ctx context.Context, resId int32, userId int32) (*model.Resource, error)
 	SaveFileDescription(ctx context.Context, userId int32, meta []byte, data []byte) (int32, error)
-	GetFileDescription(ctx context.Context, resource *resources.Resource) ([]byte, error)
+	GetFileDescription(ctx context.Context, resource *model.Resource) ([]byte, error)
 }
 
 type resourceService struct {
@@ -29,7 +29,7 @@ func NewResourceService(repo repositories.ResourceRepository) ResourceService {
 	return &resourceService{log: logger.NewLogger("res-service"), repo: repo}
 }
 
-func (s *resourceService) Save(ctx context.Context, data *resources.Resource) error {
+func (s *resourceService) Save(ctx context.Context, data *model.Resource) error {
 	return s.repo.Save(ctx, data)
 }
 
@@ -37,16 +37,16 @@ func (s *resourceService) Delete(ctx context.Context, resId int32, userId int32)
 	return s.repo.Delete(ctx, resId, userId)
 }
 
-func (s *resourceService) GetDescriptions(ctx context.Context, userId int32, resType enum.ResourceType) ([]*resources.ResourceDescription, error) {
+func (s *resourceService) GetDescriptions(ctx context.Context, userId int32, resType enum.ResourceType) ([]*model.ResourceDescription, error) {
 	return s.repo.GetResDescriptionsByType(ctx, userId, resType)
 }
 
-func (s *resourceService) Get(ctx context.Context, resId int32, userId int32) (*resources.Resource, error) {
+func (s *resourceService) Get(ctx context.Context, resId int32, userId int32) (*model.Resource, error) {
 	return s.repo.Get(ctx, resId, userId)
 }
 
 func (s *resourceService) SaveFileDescription(ctx context.Context, userId int32, meta []byte, data []byte) (int32, error) {
-	resource := &resources.Resource{
+	resource := &model.Resource{
 		UserId: userId,
 		Data:   data,
 	}
@@ -61,7 +61,7 @@ func (s *resourceService) SaveFileDescription(ctx context.Context, userId int32,
 	return resource.Id, nil
 }
 
-func (s *resourceService) GetFileDescription(ctx context.Context, resource *resources.Resource) ([]byte, error) {
+func (s *resourceService) GetFileDescription(ctx context.Context, resource *model.Resource) ([]byte, error) {
 	res, err := s.repo.Get(ctx, resource.Id, resource.UserId)
 	if err != nil {
 		return nil, err

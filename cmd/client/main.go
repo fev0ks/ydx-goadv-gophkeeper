@@ -10,9 +10,9 @@ import (
 	"ydx-goadv-gophkeeper/internal/client/model"
 	"ydx-goadv-gophkeeper/internal/client/services"
 	"ydx-goadv-gophkeeper/internal/client/terminal"
-	"ydx-goadv-gophkeeper/internal/logger"
-	intsrv "ydx-goadv-gophkeeper/internal/services"
-	"ydx-goadv-gophkeeper/internal/shutdown"
+	"ydx-goadv-gophkeeper/pkg/logger"
+	intsrv "ydx-goadv-gophkeeper/pkg/services"
+	"ydx-goadv-gophkeeper/pkg/shutdown"
 )
 
 var (

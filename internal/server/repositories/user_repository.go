@@ -9,10 +9,10 @@ import (
 	"github.com/jackc/pgx/v4"
 	"go.uber.org/zap"
 
-	"ydx-goadv-gophkeeper/internal/logger"
-	"ydx-goadv-gophkeeper/internal/model"
-	"ydx-goadv-gophkeeper/internal/model/consts"
-	"ydx-goadv-gophkeeper/internal/model/errs"
+	"ydx-goadv-gophkeeper/internal/server/model"
+	"ydx-goadv-gophkeeper/internal/server/model/consts"
+	"ydx-goadv-gophkeeper/internal/server/model/errs"
+	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
 type UserRepository interface {

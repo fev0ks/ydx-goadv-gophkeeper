@@ -12,10 +12,10 @@ import (
 
 	"golang.org/x/term"
 
+	"ydx-goadv-gophkeeper/internal/client/model/consts"
+	"ydx-goadv-gophkeeper/internal/client/model/resources"
 	"ydx-goadv-gophkeeper/internal/client/services"
-	"ydx-goadv-gophkeeper/internal/model/consts"
-	"ydx-goadv-gophkeeper/internal/model/enum"
-	"ydx-goadv-gophkeeper/internal/model/resources"
+	"ydx-goadv-gophkeeper/pkg/model/enum"
 )
 
 const (

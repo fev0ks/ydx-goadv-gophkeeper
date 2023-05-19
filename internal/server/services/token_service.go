@@ -8,8 +8,8 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"google.golang.org/grpc/metadata"
 
-	"ydx-goadv-gophkeeper/internal/model"
-	"ydx-goadv-gophkeeper/internal/model/errs"
+	"ydx-goadv-gophkeeper/internal/server/model"
+	"ydx-goadv-gophkeeper/internal/server/model/errs"
 )
 
 const (

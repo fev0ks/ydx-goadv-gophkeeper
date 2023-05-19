@@ -1,6 +1,8 @@
 package consts
 
-import "ydx-goadv-gophkeeper/internal/model/enum"
+import (
+	"ydx-goadv-gophkeeper/pkg/model/enum"
+)
 
 const (
 	LoginPasswordArg = "lp"

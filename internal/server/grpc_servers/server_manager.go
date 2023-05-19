@@ -7,9 +7,9 @@ import (
 	"google.golang.org/grpc"
 
 	pb "ydx-goadv-gophkeeper/api/proto"
-	"ydx-goadv-gophkeeper/internal/logger"
 	"ydx-goadv-gophkeeper/internal/server/interceptors"
 	"ydx-goadv-gophkeeper/internal/server/services"
+	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
 const (

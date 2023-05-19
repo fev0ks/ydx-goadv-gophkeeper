@@ -9,8 +9,8 @@ import (
 	"github.com/jackc/tern/migrate"
 	"go.uber.org/zap"
 
-	"ydx-goadv-gophkeeper/internal/logger"
 	"ydx-goadv-gophkeeper/internal/server/configs"
+	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
 const (

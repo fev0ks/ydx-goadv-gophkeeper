@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"ydx-goadv-gophkeeper/internal/client/model"
-	"ydx-goadv-gophkeeper/internal/logger"
+	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
 type RequestTokenProcessor interface {
