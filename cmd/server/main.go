@@ -63,6 +63,8 @@ func main() {
 		log.Fatalf("failed to start proto server: %v", err)
 	}
 	exitHandler.ShutdownGrpcServerBeforeExit(server)
-	shutdown.ProperExitDefer(exitHandler)
+	exit := shutdown.ProperExitDefer(exitHandler)
+	<-exit
+	log.Info("Program is going to be closed")
 	<-ctx.Done()
 }

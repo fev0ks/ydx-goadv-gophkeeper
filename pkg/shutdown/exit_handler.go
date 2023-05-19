@@ -88,8 +88,8 @@ func ProperExitDefer(exitHandler *ExitHandler) chan struct{} {
 	exit := make(chan struct{})
 	go func() {
 		s := <-signals
-		exit <- struct{}{}
 		exitHandler.log.Infof("Received a signal '%s'", s)
+		exit <- struct{}{}
 		exitHandler.setNewFuncExecutionAllowed(false)
 		exitHandler.shutdown()
 	}()
