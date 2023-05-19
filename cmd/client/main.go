@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	pb "ydx-goadv-gophkeeper/internal/api/proto"
+	pb "ydx-goadv-gophkeeper/api/proto"
 	clients "ydx-goadv-gophkeeper/internal/client"
 	"ydx-goadv-gophkeeper/internal/client/configs"
 	"ydx-goadv-gophkeeper/internal/client/model"

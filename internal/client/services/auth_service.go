@@ -8,8 +8,8 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	pb "ydx-goadv-gophkeeper/internal/api/proto"
 
+	pb "ydx-goadv-gophkeeper/api/proto"
 	"ydx-goadv-gophkeeper/internal/client/model"
 	"ydx-goadv-gophkeeper/internal/logger"
 )

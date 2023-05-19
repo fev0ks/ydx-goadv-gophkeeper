@@ -10,8 +10,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	pb "ydx-goadv-gophkeeper/internal/api/proto"
 
+	pb "ydx-goadv-gophkeeper/api/proto"
 	"ydx-goadv-gophkeeper/internal/server/services"
 
 	"ydx-goadv-gophkeeper/internal/logger"

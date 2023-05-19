@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 
 	"go.uber.org/zap"
-	pb "ydx-goadv-gophkeeper/internal/api/proto"
 
+	pb "ydx-goadv-gophkeeper/api/proto"
 	"ydx-goadv-gophkeeper/internal/logger"
 	"ydx-goadv-gophkeeper/internal/model/enum"
 	"ydx-goadv-gophkeeper/internal/model/resources"

@@ -7,10 +7,9 @@ import (
 	"io"
 
 	"go.uber.org/zap"
-	pb "ydx-goadv-gophkeeper/internal/api/proto"
-
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	pb "ydx-goadv-gophkeeper/api/proto"
 	"ydx-goadv-gophkeeper/internal/logger"
 	"ydx-goadv-gophkeeper/internal/model/consts"
 	"ydx-goadv-gophkeeper/internal/model/enum"
