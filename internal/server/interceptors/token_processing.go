@@ -56,6 +56,7 @@ func (tp *requestTokenProcessor) TokenInterceptor() grpc.UnaryServerInterceptor 
 				return nil, err
 			}
 			ctxWithUserId := context.WithValue(ctx, consts.UserIDCtxKey, userId)
+			tp.log.Infof("Retrieved from token userId: %d", userId)
 			return handler(ctxWithUserId, req)
 		}
 		return handler(ctx, req)
@@ -76,6 +77,7 @@ func (tp *requestTokenProcessor) TokenStreamInterceptor() grpc.StreamServerInter
 				return err
 			}
 			ctxWithUserId := context.WithValue(ss.Context(), consts.UserIDCtxKey, userId)
+			tp.log.Infof("Retrieved from token userId: %d", userId)
 			ss.Context()
 			return handler(srv, &model.ServerStreamWithCtx{
 				ServerStream: ss,

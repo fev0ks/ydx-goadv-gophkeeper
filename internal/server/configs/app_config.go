@@ -8,6 +8,9 @@ import (
 	"strconv"
 
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
+
+	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
 const (
@@ -17,6 +20,7 @@ const (
 )
 
 type AppConfig struct {
+	log              *zap.SugaredLogger
 	ServerPort       string `env:"SERVER_PORT" json:"server_port"`
 	TokenKey         string `env:"TOKEN_KEY" json:"token_key"`
 	DBConnection     string `env:"DV_CONNECTION" json:"db_connection"`
@@ -28,7 +32,7 @@ func InitAppConfig(configPath string) (*AppConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	setupConfigByFlags(config)
+	config.setupConfigByFlags()
 	return config, nil
 }
 
@@ -37,11 +41,29 @@ func InitTestAppConfig(configPath string) (*AppConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	setupConfigByFlags(config)
+	config.setupConfigByFlags()
 	return config, nil
 }
 
-func setupConfigByFlags(cfg *AppConfig) {
+func readConfig(configFilePath string) (*AppConfig, error) {
+	if configFilePath == "" {
+		return nil, errors.New("failed to init configuration: file path is not specified")
+	}
+	configBytes, err := os.ReadFile(configFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read configFile by '%s': %v", configFilePath, err)
+	}
+	var config AppConfig
+	err = json.Unmarshal(configBytes, &config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config json '%s': %v", string(configBytes), err)
+	}
+	config.log = logger.NewLogger("app-config")
+	return &config, nil
+}
+
+func (cfg *AppConfig) setupConfigByFlags() {
+	cfg.log.Infof("Reading config flags")
 	var serverPortF string
 	pflag.StringVarP(&serverPortF, "a", "a", defaultPort, "Port of the proto server")
 
@@ -71,20 +93,4 @@ func setupConfigByFlags(cfg *AppConfig) {
 	if tokenKeyF != "" {
 		cfg.TokenKey = tokenKeyF
 	}
-}
-
-func readConfig(configFilePath string) (*AppConfig, error) {
-	if configFilePath == "" {
-		return nil, errors.New("failed to init configuration: file path is not specified")
-	}
-	configBytes, err := os.ReadFile(configFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read configFile by '%s': %v", configFilePath, err)
-	}
-	var config AppConfig
-	err = json.Unmarshal(configBytes, &config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config json '%s': %v", string(configBytes), err)
-	}
-	return &config, nil
 }

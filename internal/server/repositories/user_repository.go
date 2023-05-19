@@ -29,9 +29,11 @@ func NewUserRepository(db DBProvider) UserRepository {
 	return &userRepository{log: logger.NewLogger("auth-repo"), db: db}
 }
 
-func (repo *userRepository) CreateUser(ctx context.Context, user *model.User) (int32, error) {
-	conn, err := repo.db.GetConnection(ctx)
+func (r *userRepository) CreateUser(ctx context.Context, user *model.User) (int32, error) {
+	r.log.Infof("Creating user '%s'", user.Username)
+	conn, err := r.db.GetConnection(ctx)
 	if err != nil {
+		r.log.Errorf("failed to get db connection: %v", err)
 		return 0, err
 	}
 	defer conn.Release()
@@ -40,18 +42,20 @@ func (repo *userRepository) CreateUser(ctx context.Context, user *model.User) (i
 	var userId int32
 	err = queryRow.Scan(&userId)
 	if pgError, ok := err.(*pgconn.PgError); ok && pgError.Code == consts.UniqueViolation {
+		r.log.Errorf("failed to save user '%s': already exist", user.Username)
 		return 0, errs.ErrUserAlreadyExist
 	}
 	if err != nil {
-		repo.log.Errorf("failed to save user '%s': %v", user.Username, err)
+		r.log.Errorf("failed to save user '%s': %v", user.Username, err)
 		return 0, fmt.Errorf("failed to save user '%s': %v", user.Username, err)
 	}
 	return userId, nil
 }
 
-func (repo *userRepository) GetUser(ctx context.Context, username string) (*model.User, error) {
-	conn, err := repo.db.GetConnection(ctx)
+func (r *userRepository) GetUser(ctx context.Context, username string) (*model.User, error) {
+	conn, err := r.db.GetConnection(ctx)
 	if err != nil {
+		r.log.Errorf("failed to get db connection: %v", err)
 		return nil, err
 	}
 	defer conn.Release()
@@ -59,11 +63,12 @@ func (repo *userRepository) GetUser(ctx context.Context, username string) (*mode
 	queryRow := conn.QueryRow(ctx, "select id, password from users where username = $1", username)
 	err = queryRow.Scan(&user.Id, &user.Password)
 	if errors.Is(err, pgx.ErrNoRows) {
+		r.log.Warnf("User '%s' not found", username)
 		return nil, errs.ErrUserNotFound
 	}
 	if err != nil {
-		repo.log.Errorf("failed to get user '%s': %v", user.Username, err)
-		return nil, fmt.Errorf("failed to get user '%s': %v", user.Username, err)
+		r.log.Errorf("failed to scan user row '%s': %v", user.Username, err)
+		return nil, fmt.Errorf("failed to scan user row '%s': %v", user.Username, err)
 	}
 
 	return user, nil

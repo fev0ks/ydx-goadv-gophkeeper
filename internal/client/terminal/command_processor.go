@@ -12,9 +12,9 @@ import (
 
 	"golang.org/x/term"
 
-	"ydx-goadv-gophkeeper/internal/client/model/consts"
 	"ydx-goadv-gophkeeper/internal/client/model/resources"
 	"ydx-goadv-gophkeeper/internal/client/services"
+	"ydx-goadv-gophkeeper/pkg/model"
 	"ydx-goadv-gophkeeper/pkg/model/enum"
 	"ydx-goadv-gophkeeper/pkg/shutdown"
 )
@@ -182,7 +182,7 @@ func (cp *commandParser) handleGet(args []string) (string, error) {
 func (cp *commandParser) handleList(args []string) (string, error) {
 	resType := enum.Nan
 	if len(args) != 0 {
-		if rType, ok := consts.ArgToType[args[0]]; ok {
+		if rType, ok := model.ArgToType[args[0]]; ok {
 			resType = rType
 		}
 	}
@@ -199,7 +199,7 @@ func (cp *commandParser) handleList(args []string) (string, error) {
 		}
 	}
 	for _, resDescription := range resDescriptions {
-		_, err := writer.WriteString(fmt.Sprintf("id: %d - type: '%s', descr: '%s'\n", resDescription.Id, consts.TypeToArg[resDescription.Type], string(resDescription.Meta)))
+		_, err := writer.WriteString(fmt.Sprintf("id: %d - type: '%s', descr: '%s'\n", resDescription.Id, model.TypeToArg[resDescription.Type], string(resDescription.Meta)))
 		if err != nil {
 			return "", err
 		}
@@ -230,13 +230,13 @@ func (cp *commandParser) handleSave(args []string) (string, error) {
 	var meta string
 	resType := args[0]
 	switch resType {
-	case consts.LoginPasswordArg:
+	case model.LoginPasswordArg:
 		resource, meta = cp.readLoginPassword()
 		return cp.saveTextResource(resource, meta, enum.LoginPassword)
-	case consts.BankCardArg:
+	case model.BankCardArg:
 		resource, meta = cp.readBankCard()
 		return cp.saveTextResource(resource, meta, enum.BankCard)
-	case consts.FileArg:
+	case model.FileArg:
 		return cp.saveFile()
 	default:
 		return "", fmt.Errorf("resource type argument '%s' is not supported, type 'help' to display available types", resType)

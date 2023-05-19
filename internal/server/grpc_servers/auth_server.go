@@ -34,7 +34,8 @@ func NewAuthServer(userService services.UserService, tokenService services.Token
 }
 
 func (s *authServer) Register(ctx context.Context, authData *pb.AuthData) (*pb.TokenData, error) {
-	if err := validateAuthData(authData); err != nil {
+	s.log.Infof("Handle registration of '%s' user", authData.Username)
+	if err := s.validateAuthData(authData); err != nil {
 		return nil, err
 	}
 
@@ -47,11 +48,13 @@ func (s *authServer) Register(ctx context.Context, authData *pb.AuthData) (*pb.T
 		s.log.Errorf("failed to create user: %v", err)
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create user: %v", err))
 	}
+	s.log.Infof("User '%s' registered, id: %d", user.Username, id)
 	return s.genToken(id)
 }
 
 func (s *authServer) Login(ctx context.Context, authData *pb.AuthData) (*pb.TokenData, error) {
-	if err := validateAuthData(authData); err != nil {
+	s.log.Infof("Handle logging of '%s' user", authData.Username)
+	if err := s.validateAuthData(authData); err != nil {
 		return nil, err
 	}
 	user, err := s.userService.GetUser(ctx, authData.Username)
@@ -71,23 +74,31 @@ func (s *authServer) Login(ctx context.Context, authData *pb.AuthData) (*pb.Toke
 		s.log.Warn("password is incorrect")
 		return nil, status.Error(codes.InvalidArgument, "password is incorrect")
 	}
+	s.log.Infof("User '%s' logged, id: %d", user.Username, user.Id)
 	return s.genToken(user.Id)
 }
 
-func validateAuthData(authData *pb.AuthData) error {
-	if len(authData.Username) == 0 || len(authData.Password) == 0 {
-		return status.Error(codes.InvalidArgument, "invalid username/password format: must be nonempty")
+func (s *authServer) validateAuthData(authData *pb.AuthData) error {
+	s.log.Info("Validate auth request")
+	if len(authData.Username) == 0 {
+		s.log.Errorf("username is empty")
+		return status.Error(codes.InvalidArgument, "invalid username format: must be nonempty")
+	}
+	if len(authData.Password) == 0 {
+		s.log.Errorf("password is empty")
+		return status.Error(codes.InvalidArgument, "invalid password format: must be nonempty")
 	}
 	return nil
 }
 
 func (s *authServer) genToken(id int32) (*pb.TokenData, error) {
+	s.log.Info("Generating token for %d", id)
 	expireAt := time.Now().UTC().Add(time.Hour)
 	token, err := s.tokenService.Generate(id, expireAt)
 	if err != nil {
-		s.log.Errorf("error on register: %v", err)
-		return nil, status.Error(codes.Internal, "internal error")
+		s.log.Errorf("failed to generate token: %v", err)
+		return nil, status.Error(codes.Internal, "token generation error")
 	}
-	s.log.Infof("generate token successfully: %v", zap.Time("expireAt", expireAt))
+	s.log.Infof("Token generated successfully: %v", zap.Time("expireAt", expireAt))
 	return &pb.TokenData{Token: token, ExpireAt: timestamppb.New(expireAt)}, nil
 }

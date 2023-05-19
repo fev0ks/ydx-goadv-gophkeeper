@@ -11,6 +11,7 @@ import (
 	"ydx-goadv-gophkeeper/internal/server/model"
 	"ydx-goadv-gophkeeper/internal/server/model/errs"
 	"ydx-goadv-gophkeeper/pkg/logger"
+	restype "ydx-goadv-gophkeeper/pkg/model"
 	"ydx-goadv-gophkeeper/pkg/model/enum"
 )
 
@@ -30,9 +31,11 @@ func NewResourceRepository(db DBProvider) ResourceRepository {
 	return &resourceRepository{log: logger.NewLogger("res-repo"), db: db}
 }
 
-func (s *resourceRepository) Save(ctx context.Context, resource *model.Resource) error {
-	conn, err := s.db.GetConnection(ctx)
+func (r *resourceRepository) Save(ctx context.Context, resource *model.Resource) error {
+	r.log.Infof("Saving resource: %v", resource)
+	conn, err := r.db.GetConnection(ctx)
 	if err != nil {
+		r.log.Errorf("failed to get db connection: %v", err)
 		return err
 	}
 	defer conn.Release()
@@ -47,17 +50,20 @@ func (s *resourceRepository) Save(ctx context.Context, resource *model.Resource)
 	)
 	err = row.Scan(&resId)
 	if err != nil {
+		r.log.Errorf("failed to scan resId: %v", err)
 		return err
 	}
 	resource.Id = resId
-
+	r.log.Infof("Resource saved: %v", resource)
 	return err
 }
 
 func (r *resourceRepository) Get(ctx context.Context, resId int32, userId int32) (*model.Resource, error) {
+	r.log.Infof("Getting '%d' resource of '%d' user", resId, userId)
 	var result model.Resource
 	conn, err := r.db.GetConnection(ctx)
 	if err != nil {
+		r.log.Errorf("failed to get db connection: %v", err)
 		return nil, err
 	}
 	defer conn.Release()
@@ -65,31 +71,40 @@ func (r *resourceRepository) Get(ctx context.Context, resId int32, userId int32)
 	row = conn.QueryRow(ctx, "select id, user_id, type, meta, data from resources where id = $1 and user_id = $2", resId, userId)
 	err = row.Scan(&result.Id, &result.UserId, &result.Type, &result.Meta, &result.Data)
 	if errors.Is(err, pgx.ErrNoRows) {
+		r.log.Warnf("There is no '%d' resource of '%d' user", resId, userId)
 		return nil, errs.ErrResNotFound
 	}
 	if err != nil {
-		r.log.Errorf("failed to parse get resourse '%d' result row: %v", resId, err)
+		r.log.Errorf("failed to parse scan resourse '%d' result row: %v", resId, err)
 		return nil, err
 	}
 	return &result, err
 }
 
-func (s *resourceRepository) GetResDescriptionsByType(ctx context.Context, userId int32, resType enum.ResourceType) ([]*model.ResourceDescription, error) {
+func (r *resourceRepository) GetResDescriptionsByType(
+	ctx context.Context,
+	userId int32,
+	resType enum.ResourceType,
+) ([]*model.ResourceDescription, error) {
+	r.log.Infof("Getting descriptions of '%d' user's resourses by type %s", userId, restype.TypeToArg[resType])
 	var results []*model.ResourceDescription
-	conn, err := s.db.GetConnection(ctx)
+	conn, err := r.db.GetConnection(ctx)
 	if err != nil {
+		r.log.Errorf("failed to get db connection: %v", err)
 		return results, err
 	}
 	defer conn.Release()
 
 	var rows pgx.Rows
 	if resType == enum.Nan {
+		r.log.Infof("Getting all resource descriptions of '%d' user", userId)
 		rows, err = conn.Query(
 			ctx,
 			"select id, meta, type from resources where user_id = $1",
 			userId,
 		)
 	} else {
+		r.log.Infof("Getting '%s' resource descriptions of '%d' user", restype.TypeToArg[resType], userId)
 		rows, err = conn.Query(
 			ctx,
 			"select id, meta, type from resources where user_id = $1 and type = $2",
@@ -102,7 +117,7 @@ func (s *resourceRepository) GetResDescriptionsByType(ctx context.Context, userI
 		resDescr := &model.ResourceDescription{}
 		err := rows.Scan(&resDescr.Id, &resDescr.Meta, &resDescr.Type)
 		if err != nil {
-			s.log.Errorf("failed to read '%d' resources of userId '%d': %v", resType, userId, err)
+			r.log.Errorf("failed to scan '%s' resources of userId '%d': %v", restype.TypeToArg[resType], userId, err)
 			return nil, fmt.Errorf("failed to read '%d' resources of userId '%d': %v", resType, userId, err)
 		}
 		results = append(results, resDescr)
@@ -110,13 +125,19 @@ func (s *resourceRepository) GetResDescriptionsByType(ctx context.Context, userI
 	return results, err
 }
 
-func (s *resourceRepository) Delete(ctx context.Context, resId int32, userId int32) error {
-	conn, err := s.db.GetConnection(ctx)
+func (r *resourceRepository) Delete(ctx context.Context, resId int32, userId int32) error {
+	r.log.Infof("Deletting '%d' resource of '%d' user", resId, userId)
+	conn, err := r.db.GetConnection(ctx)
 	if err != nil {
+		r.log.Errorf("failed to get db connection: %v", err)
 		return err
 	}
 	defer conn.Release()
 
 	_, err = conn.Exec(ctx, "delete from resources where id = $1 and user_id = $2", resId, userId)
-	return err
+	if err != nil {
+		r.log.Errorf("failed to delete  '%d' resource of '%d' user: %v", resId, userId, err)
+		return err
+	}
+	return nil
 }

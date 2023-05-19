@@ -1,4 +1,4 @@
-package consts
+package model
 
 import (
 	"ydx-goadv-gophkeeper/pkg/model/enum"

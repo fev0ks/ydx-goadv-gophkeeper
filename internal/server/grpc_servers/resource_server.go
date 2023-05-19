@@ -48,13 +48,19 @@ func (s *ResourceServer) Save(ctx context.Context, resource *pb.Resource) (*pb.R
 	res.Meta = resource.Meta
 
 	res.Type = enum.ResourceType(resource.Type)
-
+	s.log.Infof("Saving resource: %v", res.ResourceDescription)
 	err := s.service.Save(ctx, res)
-	return &pb.ResourceId{Id: res.Id}, err
+	if err != nil {
+		s.log.Errorf("failed to save resource: %v", res.ResourceDescription)
+		return nil, err
+	}
+	return &pb.ResourceId{Id: res.Id}, nil
 }
 
 func (s *ResourceServer) Delete(ctx context.Context, resId *pb.ResourceId) (*emptypb.Empty, error) {
+	s.log.Infof("Deleting resource: %d", resId.Id)
 	if err := s.service.Delete(ctx, resId.Id, s.getUserIdFromCtx(ctx)); err != nil {
+		s.log.Errorf("failed to delete resource: %d", resId.Id)
 		return nil, err
 	}
 	return &emptypb.Empty{}, nil
@@ -63,8 +69,10 @@ func (s *ResourceServer) Delete(ctx context.Context, resId *pb.ResourceId) (*emp
 func (s *ResourceServer) GetDescriptions(query *pb.Query, stream pb.Resources_GetDescriptionsServer) error {
 	t := enum.ResourceType(query.ResourceType)
 	userId := s.getUserIdFromCtx(stream.Context())
+	s.log.Infof("Getting list descriptions of resources for user: %d", userId)
 	resourceDescriptions, err := s.service.GetDescriptions(stream.Context(), userId, t)
 	if err != nil {
+		s.log.Errorf("failed to collect list descriptions of resources for user: %d", userId)
 		return err
 	}
 
@@ -75,6 +83,7 @@ func (s *ResourceServer) GetDescriptions(query *pb.Query, stream pb.Resources_Ge
 			Meta: resDescription.Meta,
 		})
 		if err != nil {
+			s.log.Errorf("failed to send '%v' of  user %d: %v", resDescription, userId, err)
 			return err
 		}
 	}
@@ -83,8 +92,10 @@ func (s *ResourceServer) GetDescriptions(query *pb.Query, stream pb.Resources_Ge
 }
 
 func (s *ResourceServer) Get(ctx context.Context, id *pb.ResourceId) (*pb.Resource, error) {
+	s.log.Infof("Getting resource: %d", id.GetId())
 	result, err := s.service.Get(ctx, id.Id, s.getUserIdFromCtx(ctx))
 	if err != nil {
+		s.log.Errorf("failed to get resource: %d", id.GetId())
 		return nil, err
 	}
 	return &pb.Resource{
@@ -94,20 +105,22 @@ func (s *ResourceServer) Get(ctx context.Context, id *pb.ResourceId) (*pb.Resour
 	}, nil
 }
 
-// SaveFile : TODO Save file by stream chunks
 func (s *ResourceServer) SaveFile(stream pb.Resources_SaveFileServer) error {
-	s.eh.AddFuncInProcessing("saving file")
-	defer s.eh.FuncFinished("saving file")
+	userId := s.getUserIdFromCtx(stream.Context())
+	s.log.Infof("Saving file resource, user: %d", userId)
+	s.eh.AddFuncInProcessing(fmt.Sprintf("saving file for user: %d", userId))
+	defer s.eh.FuncFinished(fmt.Sprintf("saving file for user: %d", userId))
 	chunk, err := stream.Recv()
 	if err == io.EOF {
+		s.log.Errorf("failed to save file resource for '%d' user: empty stream", userId)
 		return errors.New("failed to save file: empty stream")
 	}
 	if err != nil {
+		s.log.Errorf("failed to save file resource for '%d' user: %v", userId, err)
 		return err
 	}
 	chunks := make(chan []byte)
 
-	userId := s.getUserIdFromCtx(stream.Context())
 	resId, err := s.service.SaveFileDescription(
 		stream.Context(),
 		userId,
@@ -115,42 +128,49 @@ func (s *ResourceServer) SaveFile(stream pb.Resources_SaveFileServer) error {
 		chunk.Data,
 	)
 	if err != nil {
+		s.log.Errorf("failed to save file '%s' description for '%d' user: %v", string(chunk.Meta), userId, err)
 		return err
 	}
 	errCh, err := s.fileService.SaveFile(fmt.Sprintf("./cmd/server/%d", resId), chunks)
 	if err != nil {
+		s.log.Errorf("failed to save file '%d' for '%d' user: %v", resId, userId, err)
 		return err
 	}
 Loop:
 	for {
 		chunk, err = stream.Recv()
 		if err == io.EOF {
+			s.log.Errorf("End of stream, resource: %d", resId)
 			close(chunks)
 			break Loop
 		}
 		if err != nil {
 			close(chunks)
+			s.log.Errorf("failed to get stream chunk, resource: %d", resId)
 			return fmt.Errorf("failed to save file: %v", err)
 		}
 		select {
 		case chunks <- chunk.Data:
-		case <-errCh:
+		case err := <-errCh:
+			s.log.Errorf("failed to save stream chunk of '%d' resource: %v", resId, err)
 			close(chunks)
 			break Loop
 		}
 	}
 
 	id := &pb.ResourceId{Id: resId}
-
+	s.log.Infof("File '%d' was saved successfully", resId)
 	return stream.SendAndClose(id)
 }
 
-// SaveFile : TODO Save file by stream chunks
 func (s *ResourceServer) GetFile(resId *pb.ResourceId, stream pb.Resources_GetFileServer) error {
-	s.eh.AddFuncInProcessing("sending file")
-	defer s.eh.FuncFinished("sending file")
-	resource, err := s.service.Get(stream.Context(), resId.GetId(), s.getUserIdFromCtx(stream.Context()))
+	s.log.Infof("Sending file resource: %d", resId.GetId())
+	s.eh.AddFuncInProcessing(fmt.Sprintf("sending file: %d", resId.GetId()))
+	defer s.eh.FuncFinished(fmt.Sprintf("sending file: %d", resId.GetId()))
+	userId := s.getUserIdFromCtx(stream.Context())
+	resource, err := s.service.Get(stream.Context(), resId.GetId(), userId)
 	if err != nil {
+		s.log.Errorf("failed to get '%d' file description for '%d' user: %v", resId.GetId(), userId, err)
 		return err
 	}
 	err = stream.Send(&pb.FileChunk{
@@ -158,11 +178,13 @@ func (s *ResourceServer) GetFile(resId *pb.ResourceId, stream pb.Resources_GetFi
 		Data: resource.Data,
 	})
 	if err != nil {
+		s.log.Errorf("failed to send '%d' file description for '%d' user: %v", resId.GetId(), userId, err)
 		return err
 	}
 	errCh := make(chan error)
 	chunks, _, err := s.fileService.ReadFile(fmt.Sprintf("./cmd/server/%d", resource.Id), errCh)
 	if err != nil {
+		s.log.Errorf("failed to read file '%d': %v", resource.Id, err)
 		return err
 	}
 
@@ -177,6 +199,7 @@ Loop:
 			Data: chunk,
 		})
 		if err != nil {
+			s.log.Errorf("failed to send '%d' file's chunk: %v", resource.Id, err)
 			errCh <- err
 			return err
 		}
