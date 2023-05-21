@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pb "ydx-goadv-gophkeeper/api/proto"
 	"ydx-goadv-gophkeeper/internal/client/model"
 	"ydx-goadv-gophkeeper/pkg/logger"
+	"ydx-goadv-gophkeeper/pkg/pb"
 )
 
 type AuthService interface {

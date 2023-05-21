@@ -10,13 +10,13 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	pb "ydx-goadv-gophkeeper/api/proto"
 	"ydx-goadv-gophkeeper/internal/server/model"
 	"ydx-goadv-gophkeeper/internal/server/model/consts"
 	"ydx-goadv-gophkeeper/internal/server/model/errs"
 	"ydx-goadv-gophkeeper/internal/server/services"
 	"ydx-goadv-gophkeeper/pkg/logger"
 	"ydx-goadv-gophkeeper/pkg/model/enum"
+	"ydx-goadv-gophkeeper/pkg/pb"
 	intsrv "ydx-goadv-gophkeeper/pkg/services"
 	"ydx-goadv-gophkeeper/pkg/shutdown"
 )

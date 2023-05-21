@@ -5,13 +5,13 @@ import (
 	"io"
 	"os"
 
-	pb "ydx-goadv-gophkeeper/api/proto"
 	clients "ydx-goadv-gophkeeper/internal/client"
 	"ydx-goadv-gophkeeper/internal/client/configs"
 	"ydx-goadv-gophkeeper/internal/client/model"
 	"ydx-goadv-gophkeeper/internal/client/services"
 	"ydx-goadv-gophkeeper/internal/client/terminal"
 	"ydx-goadv-gophkeeper/pkg/logger"
+	"ydx-goadv-gophkeeper/pkg/pb"
 	intsrv "ydx-goadv-gophkeeper/pkg/services"
 	"ydx-goadv-gophkeeper/pkg/shutdown"
 )

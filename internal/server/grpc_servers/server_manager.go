@@ -8,10 +8,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	pb "ydx-goadv-gophkeeper/api/proto"
 	"ydx-goadv-gophkeeper/internal/server/interceptors"
 	"ydx-goadv-gophkeeper/internal/server/services"
 	"ydx-goadv-gophkeeper/pkg/logger"
+	"ydx-goadv-gophkeeper/pkg/pb"
 )
 
 const (

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package gophkeeper;
 
-option go_package = "ydx-goadv-gophkeeper/internal/proto/grpc1";
+option go_package = "ydx-goadv-gophkeeper/pb";
 
 import "google/protobuf/timestamp.proto";
 
