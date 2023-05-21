@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	bufferSize = 4096
+	bufferSize  = 655360
+	maxFileSize = 655360
 )
 
 type FileService interface {
@@ -40,7 +41,9 @@ func (fm *fileService) ReadFile(path string, errCh chan error) (chan []byte, os.
 	if err != nil {
 		return nil, nil, errs.FileProcessingError{Err: err}
 	}
-
+	if stat.Size() > maxFileSize {
+		return nil, nil, errs.FileProcessingError{Err: errs.ErrResTooBig}
+	}
 	go func() {
 		defer file.Close()
 		reader := bufio.NewReader(file)

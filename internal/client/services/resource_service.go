@@ -171,15 +171,17 @@ func (s *resourceService) SaveFile(ctx context.Context, path string, meta []byte
 	if err != nil {
 		return 0, err
 	}
-
 	for {
 		chunk, ok := <-chunks
 		if !ok {
 			break
 		}
-		err := stream.Send(&pb.FileChunk{
-			Meta: nil,
-			Data: chunk,
+		encrypt, err := s.cryptoService.Encrypt(chunk)
+		if err != nil {
+			return 0, err
+		}
+		err = stream.Send(&pb.FileChunk{
+			Data: encrypt,
 		})
 		if err != nil {
 			errCh <- err
@@ -226,8 +228,13 @@ Loop:
 			return "", err
 		}
 
+		decrypt, err := s.cryptoService.Decrypt(chunk.Data)
+		if err != nil {
+			s.log.Errorf("failed to decrypt file stream chunk: %v", err)
+			return "", err
+		}
 		select {
-		case chunks <- chunk.Data:
+		case chunks <- decrypt:
 		case _ = <-errCh:
 			close(chunks)
 			break Loop
