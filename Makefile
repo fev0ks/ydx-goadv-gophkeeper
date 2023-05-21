@@ -14,3 +14,6 @@ client_build_osx:
 
 client_build_linux:
 	GOOS=linux GOARCH=amd64 go build -o bin/client/gophkeeper_linux $(build_info_flag) $(client_app)
+
+cert:
+    ./cert/gen.sh

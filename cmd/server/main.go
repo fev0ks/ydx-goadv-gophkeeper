@@ -55,12 +55,15 @@ func main() {
 	authServer := servers.NewAuthServer(userSrv, tokenSrv)
 	resourcesServer := servers.NewResourcesServer(resSrv, fileProcessor, exitHandler)
 
-	serverManager := servers.NewServerManager(tokenSrv)
+	serverManager, err := servers.NewServerManager(tokenSrv)
+	if err != nil {
+		log.Fatalf("failed to init grpc server: %v", err)
+	}
 	serverManager.RegisterResourcesServer(resourcesServer)
 	serverManager.RegisterAuthServer(authServer)
 	server, err := serverManager.Start(appConfig.ServerPort)
 	if err != nil {
-		log.Fatalf("failed to start proto server: %v", err)
+		log.Fatalf("failed to start grpc server: %v", err)
 	}
 	exitHandler.ShutdownGrpcServerBeforeExit(server)
 	exit := shutdown.ProperExitDefer(exitHandler)

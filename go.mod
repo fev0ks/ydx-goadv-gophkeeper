@@ -8,6 +8,7 @@ require (
 	github.com/jackc/pgconn v1.14.0
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/jackc/tern v1.13.0
+	github.com/pkg/errors v0.8.1
 	github.com/spf13/pflag v1.0.5
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.6.0

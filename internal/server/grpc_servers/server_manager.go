@@ -3,8 +3,10 @@ package grpc_servers
 import (
 	"net"
 
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	pb "ydx-goadv-gophkeeper/api/proto"
 	"ydx-goadv-gophkeeper/internal/server/interceptors"
@@ -28,18 +30,20 @@ type serverManager struct {
 	server *grpc.Server
 }
 
-func NewServerManager(
-	tokenService services.TokenService,
-) ServerManager {
+func NewServerManager(tokenService services.TokenService) (ServerManager, error) {
+	sm := &serverManager{log: logger.NewLogger("server-mnr")}
 	tokenValidator := interceptors.NewRequestTokenProcessor(tokenService, registerMethod, loginMethod)
+	tlsCredentials, err := sm.loadTLSCredentials()
+	if err != nil {
+		return nil, err
+	}
 	server := grpc.NewServer(
+		grpc.Creds(tlsCredentials),
 		grpc.UnaryInterceptor(tokenValidator.TokenInterceptor()),
 		grpc.StreamInterceptor(tokenValidator.TokenStreamInterceptor()),
 	)
-	return &serverManager{
-		log:    logger.NewLogger("server-mnr"),
-		server: server,
-	}
+	sm.server = server
+	return sm, nil
 }
 
 func (s *serverManager) Start(port string) (*grpc.Server, error) {
@@ -64,4 +68,15 @@ func (s *serverManager) RegisterAuthServer(authServer pb.AuthServer) {
 
 func (s *serverManager) RegisterResourcesServer(resServer pb.ResourcesServer) {
 	pb.RegisterResourcesServer(s.server, resServer)
+}
+
+func (s *serverManager) loadTLSCredentials() (credentials.TransportCredentials, error) {
+	// Load server's certificate and private key
+	config, err := credentials.NewServerTLSFromFile("cert/server-cert.pem", "cert/server-key.pem")
+	if err != nil {
+		s.log.Errorf("failed to load TLC config: %v", err)
+		return nil, errors.Wrap(err, "tls-error")
+	}
+
+	return config, nil
 }
