@@ -13,6 +13,7 @@ import (
 
 type ResourceService interface {
 	Save(ctx context.Context, res *model.Resource) error
+	Update(ctx context.Context, res *model.Resource) error
 	Delete(ctx context.Context, resId, userId int32) error
 	GetDescriptions(ctx context.Context, userId int32, resType enum.ResourceType) ([]*model.ResourceDescription, error)
 	Get(ctx context.Context, resId int32, userId int32) (*model.Resource, error)
@@ -31,6 +32,10 @@ func NewResourceService(repo repositories.ResourceRepository) ResourceService {
 
 func (s *resourceService) Save(ctx context.Context, data *model.Resource) error {
 	return s.repo.Save(ctx, data)
+}
+
+func (s *resourceService) Update(ctx context.Context, data *model.Resource) error {
+	return s.repo.Update(ctx, data)
 }
 
 func (s *resourceService) Delete(ctx context.Context, resId int32, userId int32) error {

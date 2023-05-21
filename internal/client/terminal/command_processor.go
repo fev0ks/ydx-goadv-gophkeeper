@@ -31,6 +31,7 @@ const (
 		"\n" +
 		"	's [type]' - save resource, where 'type' is: lp - LoginPassword, fl - File, bc - BankCard\n" +
 		"\n" +
+		"	'u [id]' - update resource\n" +
 		"	'd [id]' - delete resource by id\n" +
 		"	'l [type]' - get resources by type, where 'type' is: lp - LoginPassword, fl - File, bc - BankCard\n	or get all if type is empty\n" +
 		"	'g [id]' - get loginPassword or BankCard by id\n" +
@@ -67,6 +68,7 @@ func NewCommandParser(
 		"login":    cp.handleLogin,
 		"register": cp.handleRegistration,
 		"s":        cp.handleSave,
+		"u":        cp.handleUpdate,
 		"d":        cp.handleDelete,
 		"l":        cp.handleList,
 		"g":        cp.handleGet,
@@ -207,24 +209,9 @@ func (cp *commandParser) handleList(args []string) (string, error) {
 	return writer.String(), nil
 }
 
-func (cp *commandParser) handleDelete(args []string) (string, error) {
-	if len(args) == 0 {
-		return "", fmt.Errorf("arg '[id]' is empty, type 'help' to display available commands format")
-	}
-	resId, err := strconv.ParseInt(args[0], 10, 32)
-	if err != nil {
-		return "", err
-	}
-	err = cp.resourceService.Delete(context.Background(), int32(resId))
-	if err != nil {
-		return "", err
-	}
-	return "deleted", nil
-}
-
 func (cp *commandParser) handleSave(args []string) (string, error) {
 	if len(args) == 0 {
-		return "", fmt.Errorf("arg '[id]' is empty, type 'help' to display available commands format")
+		return "", fmt.Errorf("arg '[type]' is empty, type 'help' to display available commands format")
 	}
 	var resource any
 	var meta string
@@ -243,6 +230,50 @@ func (cp *commandParser) handleSave(args []string) (string, error) {
 	}
 }
 
+func (cp *commandParser) handleUpdate(args []string) (string, error) {
+	if len(args) == 0 {
+		return "", fmt.Errorf("arg '[id]' is empty, type 'help' to display available commands format")
+	}
+	resId, err := strconv.ParseInt(args[0], 10, 32)
+	if err != nil {
+		return "", err
+	}
+	id := int32(resId)
+	var resource any
+	resDescription, err := cp.resourceService.Get(context.Background(), id)
+	if err != nil {
+		return "", err
+	}
+	var meta string
+	switch resDescription.Resource.Type() {
+	case enum.LoginPassword:
+		resource, meta = cp.readLoginPassword()
+		return cp.updateTextResource(id, resource, meta, enum.LoginPassword)
+	case enum.BankCard:
+		resource, meta = cp.readBankCard()
+		return cp.updateTextResource(id, resource, meta, enum.BankCard)
+	case enum.File:
+		return "", fmt.Errorf("file update is not implemented, create a new")
+	default:
+		return "", fmt.Errorf("resource type argument '%d' is not supported, type 'help' to display available types", resDescription.Resource.Type())
+	}
+}
+
+func (cp *commandParser) handleDelete(args []string) (string, error) {
+	if len(args) == 0 {
+		return "", fmt.Errorf("arg '[id]' is empty, type 'help' to display available commands format")
+	}
+	resId, err := strconv.ParseInt(args[0], 10, 32)
+	if err != nil {
+		return "", err
+	}
+	err = cp.resourceService.Delete(context.Background(), int32(resId))
+	if err != nil {
+		return "", err
+	}
+	return "deleted", nil
+}
+
 func (cp *commandParser) saveTextResource(resource any, meta string, resType enum.ResourceType) (string, error) {
 	resourceJson, err := json.Marshal(resource)
 	if err != nil {
@@ -253,6 +284,18 @@ func (cp *commandParser) saveTextResource(resource any, meta string, resType enu
 		return "", err
 	}
 	return fmt.Sprintf("saved successfully, id: %v", id), nil
+}
+
+func (cp *commandParser) updateTextResource(resId int32, resource any, meta string, resType enum.ResourceType) (string, error) {
+	resourceJson, err := json.Marshal(resource)
+	if err != nil {
+		return "", err
+	}
+	err = cp.resourceService.Update(context.Background(), resId, resType, resourceJson, []byte(meta))
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("updated successfully, id: %v", resId), nil
 }
 
 func (cp *commandParser) saveFile() (string, error) {

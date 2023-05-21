@@ -19,6 +19,7 @@ import (
 
 type ResourceService interface {
 	Save(ctx context.Context, resType enum.ResourceType, data []byte, meta []byte) (int32, error)
+	Update(ctx context.Context, resId int32, resType enum.ResourceType, data []byte, meta []byte) error
 	Delete(ctx context.Context, resId int32) error
 	GetDescriptions(ctx context.Context, resType enum.ResourceType) ([]*model.ResourceDescription, error)
 	Get(ctx context.Context, resId int32) (*resources.Info, error)
@@ -65,6 +66,26 @@ func (s *resourceService) Save(
 		return 0, err
 	}
 	return resId.GetId(), nil
+}
+
+func (s *resourceService) Update(
+	ctx context.Context,
+	resId int32,
+	resType enum.ResourceType,
+	data []byte,
+	meta []byte,
+) error {
+	encryptedData, err := s.cryptoService.Encrypt(data)
+	if err != nil {
+		return err
+	}
+	_, err = s.resourceClient.Update(ctx, &pb.Resource{
+		Id:   resId,
+		Type: pb.TYPE(resType),
+		Data: encryptedData,
+		Meta: meta,
+	})
+	return err
 }
 
 func (s *resourceService) Delete(ctx context.Context, resId int32) error {

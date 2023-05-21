@@ -2,6 +2,8 @@ package resources
 
 import (
 	"fmt"
+
+	"ydx-goadv-gophkeeper/pkg/model/enum"
 )
 
 type BankCard struct {
@@ -23,4 +25,8 @@ func (b *BankCard) Format(description string) string {
 		b.Surname,
 		description,
 	)
+}
+
+func (p *BankCard) Type() enum.ResourceType {
+	return enum.BankCard
 }

@@ -1,6 +1,10 @@
 package resources
 
-import "fmt"
+import (
+	"fmt"
+
+	"ydx-goadv-gophkeeper/pkg/model/enum"
+)
 
 type LoginPassword struct {
 	Login    string `json:"login,omitempty"`
@@ -13,4 +17,8 @@ func NewLoginPassword(login string, password string) *LoginPassword {
 
 func (p *LoginPassword) Format(description string) string {
 	return fmt.Sprintf("login: %s\npassword: %s\ndescription: %s", p.Login, p.Password, description)
+}
+
+func (p *LoginPassword) Type() enum.ResourceType {
+	return enum.LoginPassword
 }

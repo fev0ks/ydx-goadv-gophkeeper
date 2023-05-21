@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	Resources_Save_FullMethodName            = "/gophkeeper.Resources/Save"
 	Resources_Delete_FullMethodName          = "/gophkeeper.Resources/Delete"
+	Resources_Update_FullMethodName          = "/gophkeeper.Resources/Update"
 	Resources_GetDescriptions_FullMethodName = "/gophkeeper.Resources/GetDescriptions"
 	Resources_Get_FullMethodName             = "/gophkeeper.Resources/Get"
 	Resources_SaveFile_FullMethodName        = "/gophkeeper.Resources/SaveFile"
@@ -34,6 +35,7 @@ const (
 type ResourcesClient interface {
 	Save(ctx context.Context, in *Resource, opts ...grpc.CallOption) (*ResourceId, error)
 	Delete(ctx context.Context, in *ResourceId, opts ...grpc.CallOption) (*empty.Empty, error)
+	Update(ctx context.Context, in *Resource, opts ...grpc.CallOption) (*empty.Empty, error)
 	GetDescriptions(ctx context.Context, in *Query, opts ...grpc.CallOption) (Resources_GetDescriptionsClient, error)
 	Get(ctx context.Context, in *ResourceId, opts ...grpc.CallOption) (*Resource, error)
 	SaveFile(ctx context.Context, opts ...grpc.CallOption) (Resources_SaveFileClient, error)
@@ -60,6 +62,15 @@ func (c *resourcesClient) Save(ctx context.Context, in *Resource, opts ...grpc.C
 func (c *resourcesClient) Delete(ctx context.Context, in *ResourceId, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, Resources_Delete_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourcesClient) Update(ctx context.Context, in *Resource, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, Resources_Update_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -179,6 +190,7 @@ func (x *resourcesGetFileClient) Recv() (*FileChunk, error) {
 type ResourcesServer interface {
 	Save(context.Context, *Resource) (*ResourceId, error)
 	Delete(context.Context, *ResourceId) (*empty.Empty, error)
+	Update(context.Context, *Resource) (*empty.Empty, error)
 	GetDescriptions(*Query, Resources_GetDescriptionsServer) error
 	Get(context.Context, *ResourceId) (*Resource, error)
 	SaveFile(Resources_SaveFileServer) error
@@ -195,6 +207,9 @@ func (UnimplementedResourcesServer) Save(context.Context, *Resource) (*ResourceI
 }
 func (UnimplementedResourcesServer) Delete(context.Context, *ResourceId) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedResourcesServer) Update(context.Context, *Resource) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
 func (UnimplementedResourcesServer) GetDescriptions(*Query, Resources_GetDescriptionsServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetDescriptions not implemented")
@@ -253,6 +268,24 @@ func _Resources_Delete_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResourcesServer).Delete(ctx, req.(*ResourceId))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Resources_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Resource)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourcesServer).Update(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Resources_Update_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourcesServer).Update(ctx, req.(*Resource))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -357,6 +390,10 @@ var Resources_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Delete",
 			Handler:    _Resources_Delete_Handler,
+		},
+		{
+			MethodName: "Update",
+			Handler:    _Resources_Update_Handler,
 		},
 		{
 			MethodName: "Get",

@@ -1,6 +1,10 @@
 package resources
 
-import "fmt"
+import (
+	"fmt"
+
+	"ydx-goadv-gophkeeper/pkg/model/enum"
+)
 
 type File struct {
 	Name      string
@@ -10,4 +14,8 @@ type File struct {
 
 func (p *File) Format(description string) string {
 	return fmt.Sprintf("name: %s\next: %s\nsize: %s bytes\ndescriptor: %s\n", p.Name, p.Extension, p.Size, description)
+}
+
+func (p *File) Type() enum.ResourceType {
+	return enum.File
 }

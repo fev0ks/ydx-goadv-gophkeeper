@@ -17,6 +17,7 @@ import (
 
 type ResourceRepository interface {
 	Save(ctx context.Context, resource *model.Resource) error
+	Update(ctx context.Context, resource *model.Resource) error
 	Get(ctx context.Context, resId int32, userId int32) (*model.Resource, error)
 	GetResDescriptionsByType(ctx context.Context, userId int32, resType enum.ResourceType) ([]*model.ResourceDescription, error)
 	Delete(ctx context.Context, resId int32, userId int32) error
@@ -55,6 +56,36 @@ func (r *resourceRepository) Save(ctx context.Context, resource *model.Resource)
 	}
 	resource.Id = resId
 	r.log.Infof("Resource saved: %v", resource)
+	return nil
+}
+
+func (r *resourceRepository) Update(ctx context.Context, resource *model.Resource) error {
+	r.log.Infof("Updating resource: %v", resource)
+	conn, err := r.db.GetConnection(ctx)
+	if err != nil {
+		r.log.Errorf("failed to get db connection: %v", err)
+		return errs.DbError{Err: err}
+	}
+	defer conn.Release()
+	var resId int32
+	row := conn.QueryRow(
+		ctx,
+		"insert into resources(id, user_id, type, data, meta) values ($1, $2, $3, $4, $5) "+
+			"ON CONFLICT (id) DO UPDATE SET data = excluded.data, meta = excluded.meta "+
+			"RETURNING id",
+		resource.Id,
+		resource.UserId,
+		resource.Type,
+		resource.Data,
+		resource.Meta,
+	)
+	err = row.Scan(&resId)
+	if err != nil {
+		r.log.Errorf("failed to scan resId: %v", err)
+		return errs.DbError{Err: err}
+	}
+	resource.Id = resId
+	r.log.Infof("Resource updated: %v", resource)
 	return nil
 }
 

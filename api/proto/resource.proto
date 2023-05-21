@@ -45,10 +45,9 @@ message FileChunk {
 service Resources {
   rpc Save(Resource) returns (ResourceId);
   rpc Delete(ResourceId) returns (google.protobuf.Empty);
+  rpc Update(Resource) returns (google.protobuf.Empty);
   rpc GetDescriptions(Query) returns (stream ResourceDescription);
   rpc Get(ResourceId) returns (Resource);
   rpc SaveFile(stream FileChunk) returns (ResourceId);
   rpc GetFile(ResourceId) returns (stream FileChunk);
 }
-
-//protoc -I C:/Users/mixa1/AppData/Local/JetBrains/GoLand2022.2/protoeditor -I . --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative *.proto

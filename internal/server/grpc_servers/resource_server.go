@@ -2,6 +2,7 @@ package grpc_servers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -59,6 +60,25 @@ func (s *ResourceServer) Save(ctx context.Context, resource *pb.Resource) (*pb.R
 	return &pb.ResourceId{Id: res.Id}, nil
 }
 
+func (s *ResourceServer) Update(ctx context.Context, resource *pb.Resource) (*emptypb.Empty, error) {
+	res := &model.Resource{
+
+		UserId: s.getUserIdFromCtx(ctx),
+		Data:   resource.Data,
+	}
+	res.Id = resource.Id
+	res.Meta = resource.Meta
+	res.Type = enum.ResourceType(resource.Type)
+
+	s.log.Infof("Updating resource: %v", res.ResourceDescription)
+	err := s.service.Update(ctx, res)
+	if err != nil {
+		s.log.Errorf("failed to update resource: %v", res.ResourceDescription)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &emptypb.Empty{}, nil
+}
+
 func (s *ResourceServer) Delete(ctx context.Context, resId *pb.ResourceId) (*emptypb.Empty, error) {
 	s.log.Infof("Deleting resource: %d", resId.Id)
 	if err := s.service.Delete(ctx, resId.Id, s.getUserIdFromCtx(ctx)); err != nil {
@@ -97,7 +117,10 @@ func (s *ResourceServer) Get(ctx context.Context, id *pb.ResourceId) (*pb.Resour
 	s.log.Infof("Getting resource: %d", id.GetId())
 	result, err := s.service.Get(ctx, id.Id, s.getUserIdFromCtx(ctx))
 	if err != nil {
-		s.log.Errorf("failed to get resource: %d", id.GetId())
+		s.log.Errorf("failed to get resource '%d': %v", id.GetId(), err)
+		if errors.Is(err, errs.ErrResNotFound) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &pb.Resource{

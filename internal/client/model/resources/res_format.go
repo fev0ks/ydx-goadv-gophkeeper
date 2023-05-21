@@ -1,7 +1,10 @@
 package resources
 
+import "ydx-goadv-gophkeeper/pkg/model/enum"
+
 type ResourceClIFormatter interface {
 	Format(description string) string
+	Type() enum.ResourceType
 }
 
 type Info struct {
