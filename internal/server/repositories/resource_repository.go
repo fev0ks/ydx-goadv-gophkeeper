@@ -15,6 +15,8 @@ import (
 	"ydx-goadv-gophkeeper/pkg/model/enum"
 )
 
+//go:generate mockgen -source=resource_repository.go -destination=../mocks/repositories/resource_repository.go -package=repositories
+
 type ResourceRepository interface {
 	Save(ctx context.Context, resource *model.Resource) error
 	Update(ctx context.Context, resource *model.Resource) error

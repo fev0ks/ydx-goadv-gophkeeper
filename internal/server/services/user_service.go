@@ -11,6 +11,8 @@ import (
 	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
+//go:generate mockgen -source=user_service.go -destination=../mocks/services/user_service.go -package=services
+
 type UserService interface {
 	CreateUser(ctx context.Context, user *model.User) (int32, error)
 	GetUser(ctx context.Context, username string) (*model.User, error)

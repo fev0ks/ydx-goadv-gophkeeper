@@ -13,6 +13,8 @@ import (
 
 const blockLength = 128
 
+//go:generate mockgen -source=crypto_service.go -destination=../mocks/services/crypto_service.go -package=services
+
 type CryptService interface {
 	Decrypt(data []byte) ([]byte, error)
 	Encrypt(data []byte) ([]byte, error)

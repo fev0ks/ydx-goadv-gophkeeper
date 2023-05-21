@@ -17,6 +17,8 @@ import (
 	intsrv "ydx-goadv-gophkeeper/pkg/services"
 )
 
+//go:generate mockgen -source=resource_service.go -destination=../mocks/services/resource_service.go -package=services
+
 type ResourceService interface {
 	Save(ctx context.Context, resType enum.ResourceType, data []byte, meta []byte) (int32, error)
 	Update(ctx context.Context, resId int32, resType enum.ResourceType, data []byte, meta []byte) error

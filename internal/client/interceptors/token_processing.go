@@ -11,6 +11,8 @@ import (
 	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
+//go:generate mockgen -source=token_processing.go -destination=../mocks/interceptors/token_processing.go -package=interceptors
+
 type RequestTokenProcessor interface {
 	TokenInterceptor() grpc.UnaryClientInterceptor
 	TokenStreamInterceptor() grpc.StreamClientInterceptor

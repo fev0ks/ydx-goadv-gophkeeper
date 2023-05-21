@@ -16,6 +16,8 @@ const (
 	token = "token"
 )
 
+//go:generate mockgen -source=token_service.go -destination=../mocks/services/token_service.go -package=services
+
 type TokenService interface {
 	Generate(id int32, expireAt time.Time) (string, error)
 	ExtractUserId(ctx context.Context) (int32, error)

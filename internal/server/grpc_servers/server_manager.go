@@ -19,6 +19,8 @@ const (
 	loginMethod    = "/gophkeeper.Auth/Login"
 )
 
+//go:generate mockgen -source=server_manager.go -destination=../mocks/grpc_servers/server_manager.go -package=grpc_servers
+
 type ServerManager interface {
 	RegisterAuthServer(authServer pb.AuthServer)
 	RegisterResourcesServer(resServer pb.ResourcesServer)

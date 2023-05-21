@@ -14,6 +14,8 @@ import (
 	"ydx-goadv-gophkeeper/pkg/pb"
 )
 
+//go:generate mockgen -source=auth_service.go -destination=../mocks/services/auth_service.go -package=services
+
 type AuthService interface {
 	Register(ctx context.Context, username string, password string) (*pb.TokenData, error)
 	Login(ctx context.Context, username string, password string) (*pb.TokenData, error)

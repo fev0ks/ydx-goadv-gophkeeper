@@ -15,6 +15,8 @@ import (
 	"ydx-goadv-gophkeeper/pkg/logger"
 )
 
+//go:generate mockgen -source=user_repository.go -destination=../mocks/repositories/user_repository.go -package=repositories
+
 type UserRepository interface {
 	CreateUser(context.Context, *model.User) (int32, error)
 	GetUser(ctx context.Context, username string) (*model.User, error)

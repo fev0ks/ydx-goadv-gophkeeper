@@ -18,6 +18,8 @@ const (
 	migrationsDir = "./migrations/postgres/"
 )
 
+//go:generate mockgen -source=db_provider.go -destination=../mocks/repositories/db_provider.go -package=repositories
+
 type DBProvider interface {
 	HealthCheck(ctx context.Context) error
 	GetConnection(ctx context.Context) (*pgxpool.Conn, error)

@@ -17,6 +17,8 @@ const (
 	maxFileSize = 655360
 )
 
+//go:generate mockgen -source=file_service.go -destination=../mocks/services/file_service.go -package=services
+
 type FileService interface {
 	ReadFile(path string, errCh chan error) (chan []byte, os.FileInfo, error)
 	SaveFile(path string, chunks chan []byte) (chan error, error)
