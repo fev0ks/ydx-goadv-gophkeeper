@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"ydx-goadv-gophkeeper/internal/client/model/resources"
-	resources2 "ydx-goadv-gophkeeper/internal/server/model"
+	"ydx-goadv-gophkeeper/internal/server/model"
 	"ydx-goadv-gophkeeper/pkg/logger"
 	"ydx-goadv-gophkeeper/pkg/model/enum"
 	"ydx-goadv-gophkeeper/pkg/pb"
@@ -20,8 +20,8 @@ import (
 type ResourceService interface {
 	Save(ctx context.Context, resType enum.ResourceType, data []byte, meta []byte) (int32, error)
 	Delete(ctx context.Context, resId int32) error
-	GetDescriptions(ctx context.Context, resType enum.ResourceType) ([]*resources2.ResourceDescription, error)
-	Get(ctx context.Context, resId int32) (*resources.ResourceInfo, error)
+	GetDescriptions(ctx context.Context, resType enum.ResourceType) ([]*model.ResourceDescription, error)
+	Get(ctx context.Context, resId int32) (*resources.Info, error)
 	SaveFile(ctx context.Context, path string, meta []byte) (int32, error)
 	GetFile(ctx context.Context, resId int32) (string, error)
 }
@@ -72,12 +72,12 @@ func (s *resourceService) Delete(ctx context.Context, resId int32) error {
 	return err
 }
 
-func (s *resourceService) GetDescriptions(ctx context.Context, resType enum.ResourceType) ([]*resources2.ResourceDescription, error) {
+func (s *resourceService) GetDescriptions(ctx context.Context, resType enum.ResourceType) ([]*model.ResourceDescription, error) {
 	stream, err := s.resourceClient.GetDescriptions(ctx, &pb.Query{ResourceType: pb.TYPE(resType)})
 	if err != nil {
 		return nil, err
 	}
-	results := make([]*resources2.ResourceDescription, 0)
+	results := make([]*model.ResourceDescription, 0)
 	for {
 		descr, err := stream.Recv()
 		if err == io.EOF {
@@ -86,7 +86,7 @@ func (s *resourceService) GetDescriptions(ctx context.Context, resType enum.Reso
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, &resources2.ResourceDescription{
+		results = append(results, &model.ResourceDescription{
 			Id:   descr.Id,
 			Meta: descr.Meta,
 			Type: enum.ResourceType(descr.Type),
@@ -95,7 +95,7 @@ func (s *resourceService) GetDescriptions(ctx context.Context, resType enum.Reso
 	return results, nil
 }
 
-func (s *resourceService) Get(ctx context.Context, resId int32) (*resources.ResourceInfo, error) {
+func (s *resourceService) Get(ctx context.Context, resId int32) (*resources.Info, error) {
 	resource, err := s.resourceClient.Get(ctx, &pb.ResourceId{Id: resId})
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func (s *resourceService) Get(ctx context.Context, resId int32) (*resources.Reso
 	return s.parseResource(resource)
 }
 
-func (s *resourceService) parseResource(resource *pb.Resource) (*resources.ResourceInfo, error) {
+func (s *resourceService) parseResource(resource *pb.Resource) (*resources.Info, error) {
 	switch enum.ResourceType(resource.Type) {
 	case enum.LoginPassword:
 		var loginPassword resources.LoginPassword
@@ -116,14 +116,14 @@ func (s *resourceService) parseResource(resource *pb.Resource) (*resources.Resou
 			return nil, err
 		}
 
-		return &resources.ResourceInfo{Resource: &loginPassword, Meta: resource.Meta}, nil
+		return &resources.Info{Resource: &loginPassword, Meta: resource.Meta}, nil
 
 	case enum.BankCard:
 		var bankCard resources.BankCard
 		if err := json.Unmarshal(resource.Data, &bankCard); err != nil {
 			return nil, err
 		}
-		return &resources.ResourceInfo{Resource: &bankCard, Meta: resource.Meta}, nil
+		return &resources.Info{Resource: &bankCard, Meta: resource.Meta}, nil
 	}
 	return nil, fmt.Errorf("undefined type %v", resource.Type)
 }
