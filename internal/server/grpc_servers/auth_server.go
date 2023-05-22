@@ -92,7 +92,7 @@ func (s *authServer) validateAuthData(authData *pb.AuthData) error {
 }
 
 func (s *authServer) genToken(id int32) (*pb.TokenData, error) {
-	s.log.Info("Generating token for %d", id)
+	s.log.Infof("Generating token for user %d", id)
 	expireAt := time.Now().UTC().Add(time.Hour)
 	token, err := s.tokenService.Generate(id, expireAt)
 	if err != nil {
