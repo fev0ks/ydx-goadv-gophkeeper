@@ -45,13 +45,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create grpc connection: %v", err)
 	}
-	exitHandler.ToClose = []io.Closer{grpcConn}
+	exitHandler.ToClose([]io.Closer{grpcConn})
 
 	authService := services.NewAuthService(pb.NewAuthClient(grpcConn), tokenHolder)
 	fileService := intsrv.NewFileService()
 	cryptoService := services.NewCryptService(appConfig.PrivateKey)
 	resourceService := services.NewResourceService(pb.NewResourcesClient(grpcConn), fileService, cryptoService)
-	exit := shutdown.ProperExitDefer(exitHandler)
+	exit := exitHandler.ProperExitDefer()
 
 	commandProcessor := terminal.NewCommandParser(buildVersion, buildDate, authService, resourceService, exitHandler)
 	commandProcessor.Start(exit)

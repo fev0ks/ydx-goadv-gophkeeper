@@ -66,7 +66,7 @@ func main() {
 		log.Fatalf("failed to start grpc server: %v", err)
 	}
 	exitHandler.ShutdownGrpcServerBeforeExit(server)
-	exit := shutdown.ProperExitDefer(exitHandler)
+	exit := exitHandler.ProperExitDefer()
 	<-exit
 	log.Info("Program is going to be closed")
 	<-ctx.Done()

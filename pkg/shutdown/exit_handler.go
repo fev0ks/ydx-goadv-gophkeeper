@@ -21,21 +21,37 @@ var (
 	mu = &sync.Mutex{}
 )
 
-type ExitHandler struct {
+//go:generate mockgen -source=exit_handler.go -destination=../mocks/shutdown/exit_handler.go -package=shutdown
+
+type ExitHandler interface {
+	IsNewFuncExecutionAllowed() bool
+	ShutdownHTTPServerBeforeExit(httpServer *http.Server)
+	ShutdownGrpcServerBeforeExit(grpcServer *grpc.Server)
+	AddFuncInProcessing(alias string)
+	FuncFinished(alias string)
+	ProperExitDefer() chan struct{}
+
+	ToCancel([]context.CancelFunc)
+	ToStop([]chan struct{})
+	ToClose([]io.Closer)
+	ToExecute([]func(ctx context.Context) error)
+}
+
+type exitHandler struct {
 	mainCtxCanceler   context.CancelFunc
 	log               *zap.SugaredLogger
 	httpServer        *http.Server
 	grpcServer        *grpc.Server
-	ToCancel          []context.CancelFunc
-	ToStop            []chan struct{}
-	ToClose           []io.Closer
-	ToExecute         []func(ctx context.Context) error
+	toCancel          []context.CancelFunc
+	toStop            []chan struct{}
+	toClose           []io.Closer
+	toExecute         []func(ctx context.Context) error
 	funcsInProcessing sync.WaitGroup
 	newFuncAllowed    bool
 }
 
-func NewExitHandlerWithCtx(mainCtxCanceler context.CancelFunc) *ExitHandler {
-	return &ExitHandler{
+func NewExitHandlerWithCtx(mainCtxCanceler context.CancelFunc) ExitHandler {
+	return &exitHandler{
 		log:               logger.NewLogger("exit-hdr"),
 		mainCtxCanceler:   mainCtxCanceler,
 		newFuncAllowed:    true,
@@ -43,42 +59,58 @@ func NewExitHandlerWithCtx(mainCtxCanceler context.CancelFunc) *ExitHandler {
 	}
 }
 
-func (eh *ExitHandler) IsNewFuncExecutionAllowed() bool {
+func (eh *exitHandler) ToCancel(toCancel []context.CancelFunc) {
+	eh.toCancel = toCancel
+}
+
+func (eh *exitHandler) ToStop(toStop []chan struct{}) {
+	eh.toStop = toStop
+}
+
+func (eh *exitHandler) ToClose(toClose []io.Closer) {
+	eh.toClose = toClose
+}
+
+func (eh *exitHandler) ToExecute(toExecute []func(ctx context.Context) error) {
+	eh.toExecute = toExecute
+}
+
+func (eh *exitHandler) IsNewFuncExecutionAllowed() bool {
 	mu.Lock()
 	defer mu.Unlock()
 	return eh.newFuncAllowed
 }
 
-func (eh *ExitHandler) setNewFuncExecutionAllowed(value bool) {
+func (eh *exitHandler) setNewFuncExecutionAllowed(value bool) {
 	mu.Lock()
 	defer mu.Unlock()
 	eh.newFuncAllowed = value
 }
 
-func (eh *ExitHandler) ShutdownHTTPServerBeforeExit(httpServer *http.Server) {
+func (eh *exitHandler) ShutdownHTTPServerBeforeExit(httpServer *http.Server) {
 	eh.httpServer = httpServer
 }
 
-func (eh *ExitHandler) ShutdownGrpcServerBeforeExit(grpcServer *grpc.Server) {
+func (eh *exitHandler) ShutdownGrpcServerBeforeExit(grpcServer *grpc.Server) {
 	eh.grpcServer = grpcServer
 }
 
-func (eh *ExitHandler) AddFuncInProcessing(alias string) {
+func (eh *exitHandler) AddFuncInProcessing(alias string) {
 	mu.Lock()
 	defer mu.Unlock()
 	eh.log.Infof("'%s' func is started and added to exit handler", alias)
 	eh.funcsInProcessing.Add(1)
 }
 
-func (eh *ExitHandler) FuncFinished(alias string) {
+func (eh *exitHandler) FuncFinished(alias string) {
 	mu.Lock()
 	defer mu.Unlock()
 	eh.log.Infof("'%s' func is finished and removed from exit handler", alias)
 	eh.funcsInProcessing.Add(-1)
 }
 
-func ProperExitDefer(exitHandler *ExitHandler) chan struct{} {
-	exitHandler.log.Info("Graceful exit handler is activated")
+func (eh *exitHandler) ProperExitDefer() chan struct{} {
+	eh.log.Info("Graceful exit handler is activated")
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals,
 		syscall.SIGINT,
@@ -88,15 +120,15 @@ func ProperExitDefer(exitHandler *ExitHandler) chan struct{} {
 	exit := make(chan struct{})
 	go func() {
 		s := <-signals
-		exitHandler.log.Infof("Received a signal '%s'", s)
+		eh.log.Infof("Received a signal '%s'", s)
 		exit <- struct{}{}
-		exitHandler.setNewFuncExecutionAllowed(false)
-		exitHandler.shutdown()
+		eh.setNewFuncExecutionAllowed(false)
+		eh.shutdown()
 	}()
 	return exit
 }
 
-func (eh *ExitHandler) shutdown() {
+func (eh *exitHandler) shutdown() {
 	successfullyFinished := make(chan struct{})
 	go func() {
 		eh.waitForShutdownServer()
@@ -114,13 +146,13 @@ func (eh *ExitHandler) shutdown() {
 	}
 }
 
-func (eh *ExitHandler) waitForFinishFunc() {
+func (eh *exitHandler) waitForFinishFunc() {
 	log.Println("Waiting for functions finish work...")
 	eh.funcsInProcessing.Wait()
 	log.Println("All functions finished work successfully")
 }
 
-func (eh *ExitHandler) waitForShutdownServer() {
+func (eh *exitHandler) waitForShutdownServer() {
 	if eh.httpServer != nil {
 		log.Println("Waiting for shutdown http server...")
 		err := eh.httpServer.Shutdown(context.Background())
@@ -136,31 +168,31 @@ func (eh *ExitHandler) waitForShutdownServer() {
 	}
 }
 
-func (eh *ExitHandler) endHeldObjects() {
-	if len(eh.ToExecute) > 0 {
+func (eh *exitHandler) endHeldObjects() {
+	if len(eh.toExecute) > 0 {
 		log.Println("ToExecute final funcs")
-		for _, execute := range eh.ToExecute {
+		for _, execute := range eh.toExecute {
 			err := execute(context.Background())
 			if err != nil {
 				eh.log.Infof("func error: %v", err)
 			}
 		}
 	}
-	if len(eh.ToCancel) > 0 {
+	if len(eh.toCancel) > 0 {
 		log.Println("ToCancel active contexts")
-		for _, cancel := range eh.ToCancel {
+		for _, cancel := range eh.toCancel {
 			cancel()
 		}
 	}
-	if len(eh.ToStop) > 0 {
+	if len(eh.toStop) > 0 {
 		log.Println("ToStop active goroutines")
-		for _, toStop := range eh.ToStop {
+		for _, toStop := range eh.toStop {
 			close(toStop)
 		}
 	}
-	if len(eh.ToClose) > 0 {
+	if len(eh.toClose) > 0 {
 		log.Println("ToClose active resources")
-		for _, toClose := range eh.ToClose {
+		for _, toClose := range eh.toClose {
 			err := toClose.Close()
 			if err != nil {
 				eh.log.Infof("failed to close an resource: %v", err)

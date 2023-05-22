@@ -13,7 +13,7 @@ type File struct {
 }
 
 func (p *File) Format(description string) string {
-	return fmt.Sprintf("name: %s\next: %s\nsize: %s bytes\ndescriptor: %s\n", p.Name, p.Extension, p.Size, description)
+	return fmt.Sprintf("name: %s\next: %s\nsize: %d bytes\ndescriptor: %s\n", p.Name, p.Extension, p.Size, description)
 }
 
 func (p *File) Type() enum.ResourceType {

@@ -27,13 +27,13 @@ type ResourceServer struct {
 	pb.UnimplementedResourcesServer
 	service     services.ResourceService
 	fileService intsrv.FileService
-	eh          *shutdown.ExitHandler
+	eh          shutdown.ExitHandler
 }
 
 func NewResourcesServer(
 	service services.ResourceService,
 	fileService intsrv.FileService,
-	eh *shutdown.ExitHandler,
+	eh shutdown.ExitHandler,
 ) pb.ResourcesServer {
 	return &ResourceServer{
 		log:         logger.NewLogger("res-service"),

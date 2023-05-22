@@ -46,7 +46,7 @@ type commandParser struct {
 	scanner         *bufio.Scanner
 	authService     services.AuthService
 	resourceService services.ResourceService
-	eh              *shutdown.ExitHandler
+	exitHandler     shutdown.ExitHandler
 	commands        map[string]func(args []string) (string, error)
 }
 
@@ -55,15 +55,14 @@ func NewCommandParser(
 	buildDate string,
 	authService services.AuthService,
 	resourceService services.ResourceService,
-	eh *shutdown.ExitHandler,
+	eh shutdown.ExitHandler,
 ) CommandParser {
 	fmt.Printf("buildVersion='%s' buildDate='%s'\n%s\n", buildVersion, buildDate, helpMsg)
 	cp := &commandParser{
 		authService:     authService,
 		resourceService: resourceService,
-		eh:              eh,
+		exitHandler:     eh,
 	}
-	cp.scanner = cp.initScanner()
 	cp.commands = map[string]func(args []string) (string, error){
 		"login":    cp.handleLogin,
 		"register": cp.handleRegistration,
@@ -87,6 +86,7 @@ Loop:
 		select {
 		case <-commandHandled:
 		case <-exit:
+			fmt.Println("exit")
 			break Loop
 		}
 	}
@@ -155,8 +155,8 @@ func (cp *commandParser) handleGetFile(args []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	cp.eh.AddFuncInProcessing("getting file")
-	defer cp.eh.FuncFinished("getting file")
+	cp.exitHandler.AddFuncInProcessing("getting file")
+	defer cp.exitHandler.FuncFinished("getting file")
 	path, err := cp.resourceService.GetFile(context.Background(), int32(resId))
 	if err != nil {
 		return "", err
@@ -301,8 +301,8 @@ func (cp *commandParser) updateTextResource(resId int32, resource any, meta stri
 func (cp *commandParser) saveFile() (string, error) {
 	filePath := cp.readString("input file path")
 	meta := cp.readString("input description")
-	cp.eh.AddFuncInProcessing("sending file")
-	defer cp.eh.FuncFinished("sending file")
+	cp.exitHandler.AddFuncInProcessing("sending file")
+	defer cp.exitHandler.FuncFinished("sending file")
 	id, err := cp.resourceService.SaveFile(context.Background(), filePath, []byte(meta))
 	if err != nil {
 		return "", err
@@ -348,9 +348,9 @@ func (cp *commandParser) readPassword() string {
 	return string(bytePassword)
 }
 
-func (cp *commandParser) initScanner() *bufio.Scanner {
+func (cp *commandParser) initScanner() {
 	buf := make([]byte, maxCapacity)
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Buffer(buf, maxCapacity)
-	return scanner
+	cp.scanner = scanner
 }
